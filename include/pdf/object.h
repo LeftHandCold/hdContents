@@ -160,4 +160,18 @@ int pdf_objcmp(hd_context *ctx, pdf_obj *a, pdf_obj *b);
 int pdf_objcmp_resolve(hd_context *ctx, pdf_obj *a, pdf_obj *b);
 pdf_document *pdf_get_indirect_document(hd_context *ctx, pdf_obj *obj);
 
+static inline int pdf_name_eq(hd_context *ctx, pdf_obj *a, pdf_obj *b)
+{
+    if (a == b)
+        return 1;
+    if (a < PDF_OBJ_NAME__LIMIT && b < PDF_OBJ_NAME__LIMIT)
+        return 0;
+    return !pdf_objcmp_resolve(ctx, a, b);
+}
+
+/* obj marking and unmarking functions - to avoid infinite recursions. */
+int pdf_obj_marked(hd_context *ctx, pdf_obj *obj);
+int pdf_mark_obj(hd_context *ctx, pdf_obj *obj);
+void pdf_unmark_obj(hd_context *ctx, pdf_obj *obj);
+
 #endif //HDCONTENTS_PDF_OBJECT_H

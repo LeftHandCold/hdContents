@@ -93,6 +93,12 @@ hd_open_document(hd_context *ctx, const char *filename)
     return NULL;
 }
 
+hd_document *
+hd_keep_document(hd_context *ctx, hd_document *doc)
+{
+    return hd_keep_imp(ctx, doc, &doc->refs);
+}
+
 void
 hd_drop_document(hd_context *ctx, hd_document *doc)
 {
@@ -114,4 +120,12 @@ void hd_drop_document_handler_context(hd_context *ctx)
         hd_free(ctx, ctx->handler);
         ctx->handler = NULL;
     }
+}
+
+hd_page *
+hd_new_page_of_size(hd_context *ctx, int size)
+{
+    hd_page *page = Memento_label(hd_calloc(ctx, 1, size), "hd_page");
+    page->refs = 1;
+    return page;
 }

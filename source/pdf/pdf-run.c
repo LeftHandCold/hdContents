@@ -1,0 +1,43 @@
+//
+// Created by sjw on 2018/1/22.
+//
+#include "hdtd.h"
+#include "pdf.h"
+
+
+pdf_obj *
+pdf_page_contents(hd_context *ctx, pdf_page *page)
+{
+    return pdf_dict_get(ctx, page->obj, PDF_NAME_Contents);
+}
+
+static void
+pdf_run_page_contents_with_usage(hd_context *ctx, pdf_document *doc, pdf_page *page, const char *usage)
+{
+    pdf_obj *contents;
+    pdf_processor *proc = NULL;
+
+    hd_var(proc);
+
+    hd_try(ctx)
+    {
+        contents = pdf_page_contents(ctx, page);
+
+        proc = pdf_new_run_processor(ctx, usage, 0);
+        pdf_process_contents(ctx, proc, doc, contents);
+        pdf_close_processor(ctx, proc);
+    }
+    hd_always(ctx)
+    {
+        pdf_drop_processor(ctx, proc);
+    }
+    hd_catch(ctx)
+    hd_rethrow(ctx);
+}
+
+void pdf_run_page_contents(hd_context *ctx, pdf_page *page)
+{
+    pdf_document *doc = page->doc;
+
+    pdf_run_page_contents_with_usage(ctx, doc, page, "View");
+}

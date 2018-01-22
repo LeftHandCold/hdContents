@@ -7,7 +7,7 @@ int main() {
     ctx = hd_new_context(NULL);
     if (!ctx)
     {
-        fprintf(stderr, "cannot create mupdf context\n");
+        fprintf(stderr, "cannot create hdContents context\n");
         return EXIT_FAILURE;
     }
 

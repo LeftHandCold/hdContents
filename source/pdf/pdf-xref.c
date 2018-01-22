@@ -707,6 +707,8 @@ pdf_new_document(hd_context *ctx, hd_stream *file)
 {
     pdf_document *doc = hd_new_derived_document(ctx, pdf_document);
     doc->super.drop_document = (hd_document_drop_fn *)pdf_drop_document_imp;
+    doc->super.count_pages = (hd_document_count_pages_fn *)pdf_count_pages;
+    doc->super.load_page = (hd_document_load_page_fn *)pdf_load_page;
     pdf_lexbuf_init(ctx, &doc->lexbuf.base, PDF_LEXBUF_LARGE);
     doc->file = file;
 

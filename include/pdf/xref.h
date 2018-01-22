@@ -51,4 +51,6 @@ pdf_obj *pdf_resolve_indirect(hd_context *ctx, pdf_obj *ref);
 pdf_obj *pdf_resolve_indirect_chain(hd_context *ctx, pdf_obj *ref);
 pdf_obj *pdf_load_object(hd_context *ctx, pdf_document *doc, int num);
 
+pdf_obj *pdf_trailer(hd_context *ctx, pdf_document *doc);
+
 #endif //HDCONTENTS_PDF_XREF_H

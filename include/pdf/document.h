@@ -8,6 +8,7 @@
 typedef struct pdf_lexbuf_s pdf_lexbuf;
 typedef struct pdf_lexbuf_large_s pdf_lexbuf_large;
 typedef struct pdf_xref_s pdf_xref;
+typedef struct pdf_page_s pdf_page;
 
 enum
 {
@@ -82,6 +83,8 @@ struct pdf_document_s
     pdf_xref *xref_sections;
     pdf_xref *saved_xref_sections;
 	int *xref_index;
+
+	int page_count;
 
     pdf_lexbuf_large lexbuf;
 };

@@ -17,6 +17,9 @@ extern "C" {
 #include "pdf/parse.h"
 #include "pdf/xref.h"
 
+#include "pdf/page.h"
+
+#include "pdf/interpret.h"
 #ifdef __cplusplus
 }
 #endif

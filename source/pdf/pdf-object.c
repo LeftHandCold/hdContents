@@ -339,6 +339,13 @@ pdf_document *pdf_get_bound_document(hd_context *ctx, pdf_obj *obj)
     return NULL;
 }
 
+int pdf_objcmp_resolve(hd_context *ctx, pdf_obj *a, pdf_obj *b)
+{
+    RESOLVE(a);
+    RESOLVE(b);
+    return pdf_objcmp(ctx, a, b);
+}
+
 int
 pdf_objcmp(hd_context *ctx, pdf_obj *a, pdf_obj *b)
 {

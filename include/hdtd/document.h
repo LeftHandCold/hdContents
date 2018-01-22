@@ -13,6 +13,53 @@
 */
 typedef struct hd_document_s hd_document;
 typedef struct hd_document_handler_s hd_document_handler;
+typedef struct hd_page_s hd_page;
+
+/*
+	hd_page_drop_page_fn: Type for a function to release all the
+	resources held by a page. Called automatically when the
+	reference count for that page reaches zero.
+*/
+typedef void (hd_page_drop_page_fn)(hd_context *ctx, hd_page *page);
+
+/*
+	hd_page_run_page_contents_fn: Type for a function to run the
+	contents of a page. See hd_run_page_contents for more
+	information.
+*/
+typedef void (hd_page_run_page_contents_fn)(hd_context *ctx, hd_page *page, char* buffer);
+
+/*
+	Structure definition is public so other classes can
+	derive from it. Do not access the members directly.
+*/
+struct hd_page_s
+{
+    int refs;
+    hd_page_drop_page_fn *drop_page;
+    hd_page_run_page_contents_fn *run_page_contents;
+};
+
+/*
+	hd_document_count_pages_fn: Type for a function to be called to
+	count the number of pages in a document. See hd_count_pages for
+	more information.
+*/
+typedef int (hd_document_count_pages_fn)(hd_context *ctx, hd_document *doc);
+
+/*
+	hd_document_load_page_fn: Type for a function to load a given
+	page from a document. See hd_load_page for more information.
+*/
+typedef hd_page *(hd_document_load_page_fn)(hd_context *ctx, hd_document *doc, int number);
+
+/*
+	hd_new_page_of_size: Create and initialize a page struct.
+*/
+hd_page *hd_new_page_of_size(hd_context *ctx, int size);
+
+#define hd_new_derived_page(CTX,TYPE) \
+	((TYPE *)Memento_label(hd_new_page_of_size(CTX,sizeof(TYPE)),#TYPE))
 
 /*
 	hd_document_drop_fn: Type for a function to be called when
@@ -33,6 +80,9 @@ struct hd_document_s
 {
     int refs;
     hd_document_drop_fn *drop_document;
+    hd_document_count_pages_fn *count_pages;
+    hd_document_load_page_fn *load_page;
+
 };
 
 /*
@@ -81,6 +131,11 @@ struct hd_document_handler_s
 void *hd_new_document_of_size(hd_context *ctx, int size);
 
 #define hd_new_derived_document(C,M) ((M*)Memento_label(hd_new_document_of_size(C, sizeof(M)), #M))
+
+/*
+	hd_keep_document: Keep a reference to an open document.
+*/
+hd_document *hd_keep_document(hd_context *ctx, hd_document *doc);
 
 /*
 	hd_register_document_handler: Register a handler

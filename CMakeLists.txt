@@ -37,6 +37,6 @@ set(SOURCE_FILES
 		source/pdf/pdf-parse.c
 		source/pdf/pdf-name-table.h
 		source/hdtd/buffer.c
-		main.c )
+		main.c source/pdf/pdf-page.c include/pdf/page.h source/pdf/pdf-run.c include/pdf/interpret.h)
 
 add_executable(hdContents ${SOURCE_FILES})
