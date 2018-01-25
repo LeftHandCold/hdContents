@@ -123,9 +123,34 @@ void hd_drop_document_handler_context(hd_context *ctx)
 }
 
 hd_page *
+hd_load_page(hd_context *ctx, hd_document *doc, int number)
+{
+    if (doc && doc->load_page)
+        return doc->load_page(ctx, doc, number);
+    return NULL;
+}
+
+hd_page *
 hd_new_page_of_size(hd_context *ctx, int size)
 {
     hd_page *page = Memento_label(hd_calloc(ctx, 1, size), "hd_page");
     page->refs = 1;
     return page;
+}
+
+void
+hd_run_page_contents(hd_context *ctx, hd_page *page, char* buf)
+{
+    if (page && page->run_page_contents && page)
+    {
+        hd_try(ctx)
+        {
+            page->run_page_contents(ctx, page, buf);
+        }
+        hd_catch(ctx)
+        {
+            if (hd_caught(ctx) != HD_ERROR_ABORT)
+                hd_rethrow(ctx);
+        }
+    }
 }

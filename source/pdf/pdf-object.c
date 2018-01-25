@@ -79,6 +79,18 @@ pdf_new_int(hd_context *ctx, pdf_document *doc, int64_t i)
 }
 
 pdf_obj *
+pdf_new_int_offset(hd_context *ctx, pdf_document *doc, hd_off_t i)
+{
+    pdf_obj_num *obj;
+    obj = Memento_label(hd_malloc(ctx, sizeof(pdf_obj_num)), "pdf_obj(offset)");
+    obj->super.refs = 1;
+    obj->super.kind = PDF_INT;
+    obj->super.flags = 0;
+    obj->u.i = i;
+    return &obj->super;
+}
+
+pdf_obj *
 pdf_new_real(hd_context *ctx, pdf_document *doc, float f)
 {
     pdf_obj_num *obj;
@@ -127,7 +139,6 @@ pdf_new_name(hd_context *ctx, pdf_document *doc, const char *str)
         //pdf_obj *test = (pdf_obj *)(intptr_t)(stdname - &PDF_NAMES[0]);
         return (pdf_obj *)(intptr_t)(stdname - &PDF_NAMES[0]);
     }
-    printf("test is test\n");
     obj = Memento_label(hd_malloc(ctx, offsetof(pdf_obj_name, n) + strlen(str) + 1), "pdf_obj(name)");
     obj->super.refs = 1;
     obj->super.kind = PDF_NAME;
@@ -1060,8 +1071,8 @@ pdf_dict_get_put(hd_context *ctx, pdf_obj *obj, pdf_obj *key, pdf_obj *val, pdf_
 
     if (key < PDF_OBJ_NAME__LIMIT)
         i = pdf_dict_find(ctx, obj, key);
-    /*else
-        i = pdf_dict_finds(ctx, obj, pdf_to_name(ctx, key));*/
+    else
+        i = pdf_dict_finds(ctx, obj, pdf_to_name(ctx, key));
 
     //prepare_object_for_alteration(ctx, obj, val);
 

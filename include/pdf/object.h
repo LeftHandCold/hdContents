@@ -86,6 +86,7 @@ typedef struct pdf_obj_ref_s
 pdf_obj *pdf_new_null(hd_context *ctx, pdf_document *doc);
 pdf_obj *pdf_new_bool(hd_context *ctx, pdf_document *doc, int b);
 pdf_obj *pdf_new_int(hd_context *ctx, pdf_document *doc, int64_t i);
+pdf_obj *pdf_new_int_offset(hd_context *ctx, pdf_document *doc, hd_off_t off);
 pdf_obj *pdf_new_real(hd_context *ctx, pdf_document *doc, float f);
 pdf_obj *pdf_new_name(hd_context *ctx, pdf_document *doc, const char *str);
 pdf_obj *pdf_new_string(hd_context *ctx, pdf_document *doc, const char *str, size_t len);

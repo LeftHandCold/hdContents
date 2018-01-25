@@ -152,29 +152,21 @@ void hd_register_document_handler(hd_context *ctx, const hd_document_handler *ha
 */
 void hd_register_document_handlers(hd_context *ctx);
 
-/*
-	hd_open_document: Open a PDF, XPS or CBZ document.
-
-	Open a document file and read its basic structure so pages and
-	objects can be located. MuPDF will try to repair broken
-	documents (without actually changing the file contents).
-
-	The returned hd_document is used when calling most other
-	document related functions.
-
-	filename: a path to a file as it would be given to open(2).
-*/
 hd_document *hd_open_document(hd_context *ctx, const char *filename);
 
 /*
 	hd_drop_document: Release an open document.
 
-	The resource store in the context associated with hd_document
-	is emptied, and any allocations for the document are freed when
-	the last reference is dropped.
-
-	Does not throw exceptions.
 */
 void hd_drop_document(hd_context *ctx, hd_document *doc);
+
+/*
+	hd_load_page: Load a page.
+
+	number: page number, 0 is the first page of the document.
+*/
+hd_page *hd_load_page(hd_context *ctx, hd_document *doc, int number);
+
+void hd_run_page_contents(hd_context *ctx, hd_page *page, char* buf);
 
 #endif //HDCONTENTS_HDTD_DOCUMENT_H

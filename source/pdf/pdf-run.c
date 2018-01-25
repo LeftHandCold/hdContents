@@ -23,6 +23,7 @@ pdf_run_page_contents_with_usage(hd_context *ctx, pdf_document *doc, pdf_page *p
     {
         contents = pdf_page_contents(ctx, page);
 
+
         proc = pdf_new_run_processor(ctx, usage, 0);
         pdf_process_contents(ctx, proc, doc, contents);
         pdf_close_processor(ctx, proc);

@@ -149,6 +149,8 @@ struct hd_stream_s
 */
 hd_stream *hd_new_stream(hd_context *ctx, void *state, hd_stream_next_fn *next, hd_stream_close_fn *close);
 
+hd_stream *hd_keep_stream(hd_context *ctx, hd_stream *stm);
+
 /*
 	hd_read_line: Read a line from stream into the buffer until either a
 	terminating newline or EOF, which it replaces with a null byte ('\0').

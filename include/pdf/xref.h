@@ -17,8 +17,8 @@ struct pdf_xref_entry_s
     unsigned char flags;	/* bit 0 = marked */
     unsigned short gen;	/* generation / objstm index */
     int num;		/* original object number (for decryption after renumbering) */
-    int64_t ofs;		/* file offset / objstm object number */
-    int64_t stm_ofs;	/* on-disk stream */
+    hd_off_t ofs;		/* file offset / objstm object number */
+    hd_off_t stm_ofs;	/* on-disk stream */
     hd_buffer *stm_buf;	/* in-memory stream (for updated objects) */
     pdf_obj *obj;		/* stored/cached object */
 };

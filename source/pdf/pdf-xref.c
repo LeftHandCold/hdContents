@@ -56,6 +56,11 @@ static void pdf_drop_xref_sections_imp(hd_context *ctx, pdf_document *doc, pdf_x
     hd_free(ctx, xref_sections);
 }
 
+int pdf_xref_len(hd_context *ctx, pdf_document *doc)
+{
+    return doc->max_xref_len;
+}
+
 static void pdf_drop_xref_sections(hd_context *ctx, pdf_document *doc)
 {
     pdf_drop_xref_sections_imp(ctx, doc, doc->saved_xref_sections, doc->saved_num_xref_sections);
@@ -146,6 +151,74 @@ ensure_solid_xref(hd_context *ctx, pdf_document *doc, int num, int which)
 	xref->subsec = new_sub;
 	if (doc->max_xref_len < num)
 		extend_xref_index(ctx, doc, num);
+}
+
+/* Used after loading a document to access entries */
+/* This will never throw anything, or return NULL if it is
+ * only asked to return objects in range within a 'solid'
+ * xref. */
+pdf_xref_entry *pdf_get_xref_entry(hd_context *ctx, pdf_document *doc, int i)
+{
+    pdf_xref *xref = NULL;
+    pdf_xref_subsec *sub;
+    int j;
+
+    if (i < 0)
+        hd_throw(ctx, HD_ERROR_GENERIC, "Negative object number requested");
+
+    if (i <= doc->max_xref_len)
+        j = doc->xref_index[i];
+    else
+        j = 0;
+
+
+    /* Find the first xref section where the entry is defined. */
+    for (; j < doc->num_xref_sections; j++)
+    {
+        xref = &doc->xref_sections[j];
+
+        if (i < xref->num_objects)
+        {
+            for (sub = xref->subsec; sub != NULL; sub = sub->next)
+            {
+                pdf_xref_entry *entry;
+
+                if (i < sub->start || i >= sub->start + sub->len)
+                    continue;
+
+                entry = &sub->table[i - sub->start];
+                if (entry->type)
+                {
+                    /* Don't update xref_index if xref_base may have
+                     * influenced the value of j */
+                    doc->xref_index[i] = j;
+                    return entry;
+                }
+            }
+        }
+    }
+
+    /* Didn't find the entry in any section. Return the entry from
+     * the final section. */
+    doc->xref_index[i] = 0;
+    if (xref == NULL || i < xref->num_objects)
+    {
+        xref = &doc->xref_sections[0];
+        for (sub = xref->subsec; sub != NULL; sub = sub->next)
+        {
+            if (i >= sub->start && i < sub->start + sub->len)
+                return &sub->table[i - sub->start];
+        }
+    }
+
+    /* At this point, we solidify the xref. This ensures that we
+     * can return a pointer. This is the only case where this function
+     * might throw an exception, and it will never happen when we are
+     * working within a 'solid' xref. */
+    ensure_solid_xref(ctx, doc, i+1, 0);
+    xref = &doc->xref_sections[0];
+    sub = xref->subsec;
+    return &sub->table[i - sub->start];
 }
 
 static void pdf_populate_next_xref_level(hd_context *ctx, pdf_document *doc)
@@ -649,12 +722,54 @@ pdf_cache_object(hd_context *ctx, pdf_document *doc, int num)
 {
     /* TODO:*/
     pdf_xref_entry *x;
+    int rnum, rgen;
+
+    if (num <= 0 || num >= pdf_xref_len(ctx, doc))
+        hd_throw(ctx, HD_ERROR_GENERIC, "object out of range (%d 0 R); xref size %d", num, pdf_xref_len(ctx, doc));
+
+object_updated:
+    x = pdf_get_xref_entry(ctx, doc, num);
+
+    if (x->obj != NULL)
+        return x;
+
+    if (x->type == 'f')
+    {
+        x->obj = pdf_new_null(ctx, doc);
+    }
+    else if (x->type == 'n')
+    {
+        hd_seek(ctx, doc->file, x->ofs, SEEK_SET);
+
+        hd_try(ctx)
+        {
+            x->obj = pdf_parse_indirect_obj(ctx, doc, doc->file, &doc->lexbuf.base,
+                                       &rnum, &rgen, &x->stm_ofs);
+        }
+        hd_catch(ctx)
+        {
+            if (hd_caught(ctx) == HD_ERROR_TRYLATER)
+                hd_rethrow(ctx);
+        }
+
+        if (rnum != num)
+        {
+            pdf_drop_obj(ctx, x->obj);
+            x->type = 'f';
+            x->ofs = -1;
+            x->gen = 0;
+            x->num = 0;
+            x->stm_ofs = 0;
+            x->obj = NULL;
+        }
+    }
     return x;
 }
 
 pdf_obj *
 pdf_resolve_indirect(hd_context *ctx, pdf_obj *ref)
 {
+
     if (pdf_is_indirect(ctx, ref))
     {
         pdf_document *doc = pdf_get_indirect_document(ctx, ref);
@@ -710,19 +825,90 @@ pdf_new_document(hd_context *ctx, hd_stream *file)
     doc->super.count_pages = (hd_document_count_pages_fn *)pdf_count_pages;
     doc->super.load_page = (hd_document_load_page_fn *)pdf_load_page;
     pdf_lexbuf_init(ctx, &doc->lexbuf.base, PDF_LEXBUF_LARGE);
-    doc->file = file;
+    doc->file = hd_keep_stream(ctx,file);
 
     return doc;
+}
+
+static void
+pdf_prime_xref_index(hd_context *ctx, pdf_document *doc)
+{
+    int i, j;
+    int *idx = doc->xref_index;
+
+    for (i = doc->num_xref_sections-1; i >= 0; i--)
+    {
+        pdf_xref *xref = &doc->xref_sections[i];
+        pdf_xref_subsec *subsec = xref->subsec;
+        while (subsec != NULL)
+        {
+            int start = subsec->start;
+            int end = subsec->start + subsec->len;
+            for (j = start; j < end; j++)
+            {
+                char t = subsec->table[j-start].type;
+                if (t != 0 && t != 'f')
+                    idx[j] = i;
+            }
+
+            subsec = subsec->next;
+        }
+    }
 }
 
 static void
 pdf_init_document(hd_context *ctx, pdf_document *doc)
 {
 	int repaired = 0;
+    int i;
+    int xref_len;
+    pdf_xref_entry *entry;
     hd_try(ctx)
     {
         pdf_read_start_xref(ctx, doc);
         pdf_read_xref_sections(ctx, doc, doc->startxref, &doc->lexbuf.base, 1);
+
+        if (pdf_xref_len(ctx, doc) == 0)
+            hd_throw(ctx, HD_ERROR_GENERIC, "found xref was empty");
+
+        pdf_prime_xref_index(ctx, doc);
+
+        entry = pdf_get_xref_entry(ctx, doc, 0);
+        /* broken pdfs where first object is missing */
+        if (!entry->type)
+        {
+            entry->type = 'f';
+            entry->gen = 65535;
+            entry->num = 0;
+        }
+            /* broken pdfs where first object is not free */
+        else if (entry->type != 'f')
+            hd_warn(ctx, "first object in xref is not free");
+
+        /* broken pdfs where object offsets are out of range */
+        xref_len = pdf_xref_len(ctx, doc);
+        for (i = 0; i < xref_len; i++)
+        {
+            entry = pdf_get_xref_entry(ctx, doc, i);
+            if (entry->type == 'n')
+            {
+                /* Special case code: "0000000000 * n" means free,
+                 * according to some producers (inc Quartz) */
+                if (entry->ofs == 0)
+                    entry->type = 'f';
+                else if (entry->ofs <= 0 || entry->ofs >= doc->file_size)
+                    hd_throw(ctx, HD_ERROR_GENERIC, "object offset out of range: %d (%d 0 R)", (int)entry->ofs, i);
+            }
+            if (entry->type == 'o')
+            {
+                /* Read this into a local variable here, because pdf_get_xref_entry
+                 * may solidify the xref, hence invalidating "entry", meaning we
+                 * need a stashed value for the throw. */
+                hd_off_t ofs = entry->ofs;
+                if (ofs <= 0 || ofs >= xref_len || pdf_get_xref_entry(ctx, doc, ofs)->type != 'n')
+                    hd_throw(ctx, HD_ERROR_GENERIC, "invalid reference to an objstm that does not exist: %d (%d 0 R)", (int)ofs, i);
+            }
+        }
     }
     hd_catch(ctx)
     {
@@ -762,10 +948,19 @@ pdf_open_document(hd_context *ctx, const char *filename)
     }
     hd_always(ctx)
     {
+        if (!doc->file)
+        {
+            printf("!doc->file 1\n");
+        }
         hd_drop_stream(ctx, file);
+        if (!doc->file)
+        {
+            printf("!doc->file 2\n");
+        }
     }
     hd_catch(ctx)
     {
+        hd_drop_stream(ctx, file);
         hd_drop_document(ctx, &doc->super);
         hd_rethrow(ctx);
     }

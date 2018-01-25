@@ -29,6 +29,21 @@ int main() {
         hd_drop_context(ctx);
         return EXIT_FAILURE;
     }
+
+    hd_page *page = hd_load_page(ctx, doc, 0);
+    char buf[512] = {0};
+
+    hd_try(ctx)
+    {
+        hd_run_page_contents(ctx, page, buf);
+    }
+    hd_catch(ctx)
+    {
+        fprintf(stderr, "cannot run page contents: %s\n", hd_caught_message(ctx));
+        hd_drop_context(ctx);
+        hd_drop_document(ctx, doc);
+        return EXIT_FAILURE;
+    }
     hd_drop_document(ctx, doc);
     hd_drop_context(ctx);
     printf("hd_new_context is end\n");

@@ -47,6 +47,12 @@ hd_new_stream(hd_context *ctx, void *state, hd_stream_next_fn *next, hd_stream_c
     return stm;
 }
 
+hd_stream *
+hd_keep_stream(hd_context *ctx, hd_stream *stm)
+{
+    return hd_keep_imp(ctx, stm, &stm->refs);
+}
+
 /* File stream */
 
 typedef struct hd_file_stream_s
