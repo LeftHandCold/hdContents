@@ -287,7 +287,7 @@ pdf_process_contents(hd_context *ctx, pdf_processor *proc, pdf_document *doc, pd
 	hd_always(ctx)
 	{
 		hd_drop_stream(ctx, stm);
-		//pdf_clear_stack(ctx, &csi);
+		pdf_clear_stack(ctx, &csi);
 		pdf_lexbuf_fin(ctx, &buf);
 	}
 	hd_catch(ctx)
