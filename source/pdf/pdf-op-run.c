@@ -16,12 +16,13 @@ struct pdf_run_processor_s
 static void
 show_string(hd_context *ctx, pdf_run_processor *pr, unsigned char *buf, int len)
 {
+    printf("buf is %x-%x-%x-%x\n", buf[0], buf[1], buf[2], buf[3]);
+    unsigned char *end = buf + len;
 }
 
 static void
 pdf_show_string(hd_context *ctx, pdf_run_processor *pr, unsigned char *buf, int len)
 {
-
 	show_string(ctx, pr, buf, len);
 }
 
@@ -50,13 +51,12 @@ pdf_show_text(hd_context *ctx, pdf_run_processor *pr, pdf_obj *text)
 
 static void pdf_run_BT(hd_context *ctx, pdf_processor *proc)
 {
-	/*pdf_run_processor *pr = (pdf_run_processor *)proc;
-	pr->tos.tm = hd_identity;
-	pr->tos.tlm = hd_identity;*/
+
 }
 
 static void pdf_run_ET(hd_context *ctx, pdf_processor *proc)
 {
+
 }
 
 /* text showing */

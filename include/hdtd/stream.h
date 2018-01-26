@@ -152,6 +152,17 @@ hd_stream *hd_new_stream(hd_context *ctx, void *state, hd_stream_next_fn *next, 
 hd_stream *hd_keep_stream(hd_context *ctx, hd_stream *stm);
 
 /*
+	hd_open_buffer: Open a buffer as a stream.
+
+	buf: The buffer to open. Ownership of the buffer is NOT passed in
+	(this function takes its own reference).
+
+	Returns pointer to newly created stream. May throw exceptions on
+	failure to allocate.
+*/
+hd_stream *hd_open_buffer(hd_context *ctx, hd_buffer *buf);
+
+/*
 	hd_read_line: Read a line from stream into the buffer until either a
 	terminating newline or EOF, which it replaces with a null byte ('\0').
 

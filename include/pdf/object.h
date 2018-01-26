@@ -140,6 +140,8 @@ void pdf_dict_putl_drop(hd_context *ctx, pdf_obj *dict, pdf_obj *val, ...);
 void pdf_dict_del(hd_context *ctx, pdf_obj *dict, pdf_obj *key);
 void pdf_dict_dels(hd_context *ctx, pdf_obj *dict, const char *key);
 
+int pdf_obj_parent_num(hd_context *ctx, pdf_obj *obj);
+
 pdf_obj *pdf_keep_obj(hd_context *ctx, pdf_obj *obj);
 void pdf_drop_obj(hd_context *ctx, pdf_obj *obj);
 
@@ -174,5 +176,8 @@ static inline int pdf_name_eq(hd_context *ctx, pdf_obj *a, pdf_obj *b)
 int pdf_obj_marked(hd_context *ctx, pdf_obj *obj);
 int pdf_mark_obj(hd_context *ctx, pdf_obj *obj);
 void pdf_unmark_obj(hd_context *ctx, pdf_obj *obj);
+
+pdf_document *pdf_get_indirect_document(hd_context *ctx, pdf_obj *obj);
+pdf_document *pdf_get_bound_document(hd_context *ctx, pdf_obj *obj);
 
 #endif //HDCONTENTS_PDF_OBJECT_H

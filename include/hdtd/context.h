@@ -177,6 +177,20 @@ void *hd_resize_array(hd_context *ctx, void *p, size_t count, size_t size);
 void *hd_malloc_no_throw(hd_context *ctx, size_t size);
 
 /*
+	hd_malloc_array_no_throw: Allocate a block of (non zeroed) memory
+	(with scavenging). Equivalent to hd_calloc_no_throw without the
+	memory clearing.
+
+	count: The number of objects to allocate space for.
+
+	size: The size (in bytes) of each object.
+
+	Returns a pointer to the allocated block. May return NULL if size
+	and/or count are 0. Returns NULL on failure to allocate.
+*/
+void *hd_malloc_array_no_throw(hd_context *ctx, size_t count, size_t size);
+
+/*
 	hd_strdup: Duplicate a C string (with scavenging)
 
 	s: The string to duplicate.

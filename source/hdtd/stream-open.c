@@ -134,3 +134,53 @@ hd_open_file(hd_context *ctx, const char *name)
         hd_throw(ctx, HD_ERROR_GENERIC, "cannot open %s: %s", name, strerror(errno));
     return hd_open_file_ptr(ctx, f);
 }
+
+/* Memory stream */
+
+static int next_buffer(hd_context *ctx, hd_stream *stm, size_t max)
+{
+    return EOF;
+}
+
+static void seek_buffer(hd_context *ctx, hd_stream *stm, int64_t offset, int whence)
+{
+    int64_t pos = stm->pos - (stm->wp - stm->rp);
+    /* Convert to absolute pos */
+    if (whence == 1)
+    {
+        offset += pos; /* Was relative to current pos */
+    }
+    else if (whence == 2)
+    {
+        offset += stm->pos; /* Was relative to end */
+    }
+
+    if (offset < 0)
+        offset = 0;
+    if (offset > stm->pos)
+        offset = stm->pos;
+    stm->rp += (int)(offset - pos);
+}
+
+static void close_buffer(hd_context *ctx, void *state_)
+{
+    hd_buffer *state = (hd_buffer *)state_;
+    hd_drop_buffer(ctx, state);
+}
+
+hd_stream *
+hd_open_buffer(hd_context *ctx, hd_buffer *buf)
+{
+    hd_stream *stm;
+
+    hd_keep_buffer(ctx, buf);
+    stm = hd_new_stream(ctx, buf, next_buffer, close_buffer);
+    stm->seek = seek_buffer;
+
+    stm->rp = buf->data;
+    stm->wp = buf->data + buf->len;
+
+    stm->pos = (int64_t)buf->len;
+
+    return stm;
+}

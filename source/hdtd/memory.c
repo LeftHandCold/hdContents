@@ -95,6 +95,22 @@ hd_malloc_array(hd_context *ctx, size_t count, size_t size)
 }
 
 void *
+hd_malloc_array_no_throw(hd_context *ctx, size_t count, size_t size)
+{
+    if (count == 0 || size == 0)
+        return 0;
+
+    if (count > SIZE_MAX / size)
+    {
+        fprintf(stderr, "error: malloc of array (" FMT_zu " x " FMT_zu " bytes) failed (size_t overflow)", count, size);
+        return NULL;
+    }
+
+    return do_scavenging_malloc(ctx, count * size);
+}
+
+
+void *
 hd_resize_array(hd_context *ctx, void *p, size_t count, size_t size)
 {
     void *np;

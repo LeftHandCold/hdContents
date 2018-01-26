@@ -19,6 +19,8 @@ extern "C" {
 /* I/O */
 #include "hdtd/buffer.h"
 #include "hdtd/stream.h"
+#include "hdtd/compressed-buffer.h"
+#include "hdtd/filter.h"
 
 /* Document */
 #include "hdtd/document.h"

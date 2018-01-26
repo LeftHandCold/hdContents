@@ -44,13 +44,22 @@ struct pdf_xref_s
     int64_t end_ofs; /* file offset to end of xref */
 };
 
+hd_stream *pdf_open_inline_stream(hd_context *ctx, pdf_document *doc, pdf_obj *stmobj, int length, hd_stream *chain, hd_compression_params *params);
+hd_compressed_buffer *pdf_load_compressed_stream(hd_context *ctx, pdf_document *doc, int num);
+hd_stream *pdf_open_stream_with_offset(hd_context *ctx, pdf_document *doc, int num, pdf_obj *dict, hd_off_t stm_ofs);
+hd_stream *pdf_open_compressed_stream(hd_context *ctx, hd_compressed_buffer *);
+hd_stream *pdf_open_contents_stream(hd_context *ctx, pdf_document *doc, pdf_obj *obj);
+
 pdf_xref_entry *pdf_cache_object(hd_context *ctx, pdf_document *doc, int num);
 
 int pdf_count_objects(hd_context *ctx, pdf_document *doc);
 pdf_obj *pdf_resolve_indirect(hd_context *ctx, pdf_obj *ref);
 pdf_obj *pdf_resolve_indirect_chain(hd_context *ctx, pdf_obj *ref);
 pdf_obj *pdf_load_object(hd_context *ctx, pdf_document *doc, int num);
+void pdf_xref_ensure_incremental_object(hd_context *ctx, pdf_document *doc, int num);
 
 pdf_obj *pdf_trailer(hd_context *ctx, pdf_document *doc);
+int pdf_xref_len(hd_context *ctx, pdf_document *doc);
+pdf_xref_entry *pdf_get_xref_entry(hd_context *ctx, pdf_document *doc, int i);
 
 #endif //HDCONTENTS_PDF_XREF_H
