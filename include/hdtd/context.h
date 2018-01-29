@@ -227,6 +227,11 @@ struct hd_context_s
     hd_error_context *error;
     hd_warn_context *warn;
     hd_document_handler_context *handler;
+
+
+	//Extracted contents
+	unsigned int flush_size;
+	unsigned char contents[256];
 };
 
 enum {

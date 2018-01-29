@@ -33,6 +33,31 @@ pdf_drop_processor(hd_context *ctx, pdf_processor *proc)
 	hd_free(ctx, proc);
 }
 
+static pdf_font_desc *
+load_font_or_hail_mary(hd_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *font, int depth)
+{
+    pdf_font_desc *desc;
+
+    hd_try(ctx)
+    {
+        desc = pdf_load_font(ctx, doc, rdb, font, depth);
+    }
+    hd_catch(ctx)
+    {
+        if (hd_caught(ctx) == HD_ERROR_TRYLATER)
+        {
+            desc = NULL;
+        }
+        else
+        {
+            hd_rethrow(ctx);
+        }
+    }
+    /*if (desc == NULL)
+        desc = pdf_load_hail_mary_font(ctx, doc);*/
+    return desc;
+}
+
 #define A(a) (a)
 #define B(a,b) (a | b << 8)
 #define C(a,b,c) (a | b << 8 | c << 16)
@@ -61,6 +86,25 @@ pdf_process_keyword(hd_context *ctx, pdf_processor *proc, pdf_csi *csi, hd_strea
         case B('B','T'): csi->in_text = 1; if (proc->op_BT) proc->op_BT(ctx, proc); break;
         case B('E','T'): csi->in_text = 0; if (proc->op_ET) proc->op_ET(ctx, proc); break;
 
+        case B('T','f'):
+            if (proc->op_Tf)
+            {
+                pdf_obj *fontres, *fontobj;
+                pdf_font_desc *font;
+                fontres = pdf_dict_get(ctx, csi->rdb, PDF_NAME_Font);
+                if (!fontres)
+                    hd_throw(ctx, HD_ERROR_SYNTAX, "cannot find Font dictionary");
+                fontobj = pdf_dict_gets(ctx, fontres, csi->name);
+                if (!fontobj)
+                    hd_throw(ctx, HD_ERROR_SYNTAX, "cannot find Font resource '%s'", csi->name);
+                font = load_font_or_hail_mary(ctx, csi->doc, csi->rdb, fontobj, 0);
+                hd_try(ctx)
+                    proc->op_Tf(ctx, proc, csi->name, font, s[0]);
+                hd_catch(ctx)
+                    hd_rethrow(ctx);
+            }
+            break;
+
         /* text showing */
         case B('T','J'): if (proc->op_TJ) proc->op_TJ(ctx, proc, csi->obj); break;
         case B('T','j'):
@@ -75,10 +119,11 @@ pdf_process_keyword(hd_context *ctx, pdf_processor *proc, pdf_csi *csi, hd_strea
     }
 }
 static void
-pdf_init_csi(hd_context *ctx, pdf_csi *csi, pdf_document *doc, pdf_lexbuf *buf)
+pdf_init_csi(hd_context *ctx, pdf_csi *csi, pdf_document *doc, pdf_obj *rdb, pdf_lexbuf *buf)
 {
 	memset(csi, 0, sizeof *csi);
 	csi->doc = doc;
+    csi->rdb = rdb;
 	csi->buf = buf;
 }
 
@@ -264,7 +309,7 @@ pdf_process_stream(hd_context *ctx, pdf_processor *proc, pdf_csi *csi, hd_stream
 }
 
 void
-pdf_process_contents(hd_context *ctx, pdf_processor *proc, pdf_document *doc, pdf_obj *stmobj)
+pdf_process_contents(hd_context *ctx, pdf_processor *proc, pdf_document *doc, pdf_obj *rdb, pdf_obj *stmobj)
 {
 	pdf_csi csi;
 	pdf_lexbuf buf;
@@ -276,7 +321,7 @@ pdf_process_contents(hd_context *ctx, pdf_processor *proc, pdf_document *doc, pd
 	hd_var(stm);
 
 	pdf_lexbuf_init(ctx, &buf, PDF_LEXBUF_SMALL);
-	pdf_init_csi(ctx, &csi, doc, &buf);
+	pdf_init_csi(ctx, &csi, doc, rdb, &buf);
 
 	hd_try(ctx)
 	{

@@ -84,6 +84,8 @@ hd_new_context_imp(const hd_alloc_context *alloc, const char *version)
     if (!ctx)
         return NULL;
 
+    ctx->flush_size = 0;
+    memset(ctx->contents, 0, sizeof(ctx->contents));
 
     /* Now initialise sections that are shared */
     hd_try(ctx)

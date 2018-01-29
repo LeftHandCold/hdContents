@@ -135,6 +135,51 @@ pdf_lookup_page_obj(hd_context *ctx, pdf_document *doc, int needle)
     return pdf_lookup_page_loc(ctx, doc, needle, NULL, NULL);
 }
 
+static pdf_obj *
+pdf_lookup_inherited_page_item(hd_context *ctx, pdf_obj *node, pdf_obj *key)
+{
+    pdf_obj *node2 = node;
+    pdf_obj *val = NULL;
+
+    hd_var(node);
+    hd_try(ctx)
+    {
+        do
+        {
+            val = pdf_dict_get(ctx, node, key);
+            if (val)
+                break;
+            if (pdf_mark_obj(ctx, node))
+                hd_throw(ctx, HD_ERROR_GENERIC, "cycle in page tree (parents)");
+            node = pdf_dict_get(ctx, node, PDF_NAME_Parent);
+        }
+        while (node);
+    }
+    hd_always(ctx)
+    {
+        do
+        {
+            pdf_unmark_obj(ctx, node2);
+            if (node2 == node)
+                break;
+            node2 = pdf_dict_get(ctx, node2, PDF_NAME_Parent);
+        }
+        while (node2);
+    }
+    hd_catch(ctx)
+    {
+        hd_rethrow(ctx);
+    }
+
+    return val;
+}
+
+pdf_obj *
+pdf_page_resources(hd_context *ctx, pdf_page *page)
+{
+    return pdf_lookup_inherited_page_item(ctx, page->obj, PDF_NAME_Resources);
+}
+
 static void
 pdf_drop_page_imp(hd_context *ctx, pdf_page *page)
 {

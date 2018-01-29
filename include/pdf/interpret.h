@@ -21,6 +21,8 @@ struct pdf_processor_s
     void (*op_BT)(hd_context *ctx, pdf_processor *proc);
     void (*op_ET)(hd_context *ctx, pdf_processor *proc);
 
+    void (*op_Tf)(hd_context *ctx, pdf_processor *proc, const char *name, pdf_font_desc *font, float size);
+
     void (*op_TJ)(hd_context *ctx, pdf_processor *proc, pdf_obj *array);
     void (*op_Tj)(hd_context *ctx, pdf_processor *proc, char *str, int len);
 
@@ -75,6 +77,6 @@ struct pdf_csi_s
 pdf_processor *pdf_new_run_processor(hd_context *ctx, const char *usage, int nested);
 
 /* Functions to actually process annotations, glyphs and general stream objects */
-void pdf_process_contents(hd_context *ctx, pdf_processor *proc, pdf_document *doc, pdf_obj *res);
+void pdf_process_contents(hd_context *ctx, pdf_processor *proc, pdf_document *doc, pdf_obj *obj, pdf_obj *res);
 
 #endif //HDCONTENTS_PDF_INTERPRET_H

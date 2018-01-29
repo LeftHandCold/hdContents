@@ -36,6 +36,7 @@ int main() {
     hd_try(ctx)
     {
         hd_run_page_contents(ctx, page, buf);
+        printf("buf is %s\n", buf);
     }
     hd_catch(ctx)
     {

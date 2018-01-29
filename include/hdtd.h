@@ -24,6 +24,7 @@ extern "C" {
 
 /* Document */
 #include "hdtd/document.h"
+
 #ifdef __cplusplus
 }
 #endif

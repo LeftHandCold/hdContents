@@ -18,6 +18,8 @@ extern "C" {
 #include "pdf/xref.h"
 
 #include "pdf/page.h"
+#include "pdf/cmap.h"
+#include "pdf/font.h"
 
 #include "pdf/interpret.h"
 #ifdef __cplusplus

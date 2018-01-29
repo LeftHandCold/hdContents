@@ -40,6 +40,6 @@ set(SOURCE_FILES
 		source/pdf/pdf-parse.c
 		source/pdf/pdf-name-table.h
 		source/hdtd/buffer.c
-		main.c source/pdf/pdf-page.c include/pdf/page.h source/pdf/pdf-run.c include/pdf/interpret.h source/pdf/pdf-op-run.c source/pdf/pdf-interpret.c source/pdf/pdf-stream.c include/hdtd/compressed-buffer.h include/hdtd/filter.h source/hdtd/filter-basic.c source/hdtd/compressed-buffer.c source/hdtd/filter-flate.c)
+		main.c source/pdf/pdf-page.c include/pdf/page.h source/pdf/pdf-run.c include/pdf/interpret.h source/pdf/pdf-op-run.c source/pdf/pdf-interpret.c source/pdf/pdf-stream.c include/hdtd/compressed-buffer.h include/hdtd/filter.h source/hdtd/filter-basic.c source/hdtd/compressed-buffer.c source/hdtd/filter-flate.c include/pdf/font.h include/pdf/cmap.h source/pdf/pdf-font.c source/pdf/pdf-cmap-load.c source/pdf/pdf-cmap.c source/pdf/pdf-unicode.c source/pdf/pdf-cmap-parse.c)
 
 add_executable(hdContents ${SOURCE_FILES})

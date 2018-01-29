@@ -44,6 +44,15 @@ struct pdf_xref_s
     int64_t end_ofs; /* file offset to end of xref */
 };
 
+hd_buffer *pdf_load_raw_stream_number(hd_context *ctx, pdf_document *doc, int num);
+hd_buffer *pdf_load_raw_stream(hd_context *ctx, pdf_obj *ref);
+hd_buffer *pdf_load_stream_number(hd_context *ctx, pdf_document *doc, int num);
+hd_buffer *pdf_load_stream(hd_context *ctx, pdf_obj *ref);
+hd_stream *pdf_open_raw_stream_number(hd_context *ctx, pdf_document *doc, int num);
+hd_stream *pdf_open_raw_stream(hd_context *ctx, pdf_obj *ref);
+hd_stream *pdf_open_stream_number(hd_context *ctx, pdf_document *doc, int num);
+hd_stream *pdf_open_stream(hd_context *ctx, pdf_obj *ref);
+
 hd_stream *pdf_open_inline_stream(hd_context *ctx, pdf_document *doc, pdf_obj *stmobj, int length, hd_stream *chain, hd_compression_params *params);
 hd_compressed_buffer *pdf_load_compressed_stream(hd_context *ctx, pdf_document *doc, int num);
 hd_stream *pdf_open_stream_with_offset(hd_context *ctx, pdf_document *doc, int num, pdf_obj *dict, hd_off_t stm_ofs);

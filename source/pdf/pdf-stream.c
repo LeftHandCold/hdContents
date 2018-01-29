@@ -233,3 +233,21 @@ pdf_open_contents_stream(hd_context *ctx, pdf_document *doc, pdf_obj *obj)
 
     hd_throw(ctx, HD_ERROR_GENERIC, "pdf object stream missing (%d 0 R)", num);
 }
+
+/*
+ * Open a stream for reading uncompressed data.
+ * Put the opened file in doc->stream.
+ * Using doc->file while a stream is open is a Bad idea.
+ */
+hd_stream *
+pdf_open_stream_number(hd_context *ctx, pdf_document *doc, int num)
+{
+    return pdf_open_image_stream(ctx, doc, num, NULL);
+}
+
+hd_stream *pdf_open_stream(hd_context *ctx, pdf_obj *ref)
+{
+    if (pdf_is_stream(ctx, ref))
+        return pdf_open_stream_number(ctx, pdf_get_indirect_document(ctx, ref), pdf_to_num(ctx, ref));
+    hd_throw(ctx, HD_ERROR_GENERIC, "object is not a stream");
+}

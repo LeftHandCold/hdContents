@@ -11,18 +11,105 @@ struct pdf_run_processor_s
 	pdf_processor super;
 	int clip;
 	int clip_even_odd;
+	pdf_font_desc *fontdesc;
+
 };
+
+static void
+pdf_show_char(hd_context *ctx, pdf_run_processor *pr, int cid)
+{
+	pdf_font_desc *fontdesc = pr->fontdesc;
+	int gid;
+	int ucsbuf[8];
+	int ucslen;
+	int i;
+	int render_direct;
+
+
+	ucslen = 0;
+	if (fontdesc->to_unicode)
+		ucslen = pdf_lookup_cmap_full(fontdesc->to_unicode, cid, ucsbuf);
+	if (ucslen == 0 && (size_t)cid < fontdesc->cid_to_ucs_len)
+	{
+		ucsbuf[0] = fontdesc->cid_to_ucs[cid];
+		ucslen = 1;
+	}
+
+	if ((ctx->flush_size < 62) && cid > 0 && ucslen > 0)
+	{
+		wchar_t *wc = (wchar_t *)&ucsbuf[0];
+		switch (*wc)
+		{
+			case '/':
+			case '\\':
+			case '*':
+			case '<':
+			case '>':
+			case '|':
+			case '\'':
+			case 0x0D:
+			case 0x20:
+			case '.':
+			case ':':
+				break;
+			default:
+				if (((*wc >= 'a' && *wc <= 'z')
+					 || (*wc >= 'A' && *wc <= 'Z')
+					 || (*wc >= '0' && *wc <= '9')))
+				{
+					memcpy(ctx->contents + ctx->flush_size, (wchar_t *)&ucsbuf[0], 2);
+					ctx->flush_size += 2;
+				}
+				else
+				{
+					if (*wc >= 0x4e00 && *wc <= 0x9fa5)
+					{
+						memcpy(ctx->contents + ctx->flush_size, (wchar_t *)&ucsbuf[0], 2);
+						ctx->flush_size += 2;
+					}
+				}
+				break;
+		}
+	}
+
+}
 
 static void
 show_string(hd_context *ctx, pdf_run_processor *pr, unsigned char *buf, int len)
 {
-    printf("buf is %x-%x-%x-%x\n", buf[0], buf[1], buf[2], buf[3]);
+	pdf_font_desc *fontdesc = pr->fontdesc;
+    if (fontdesc == NULL)
+    {
+        return;
+    }
     unsigned char *end = buf + len;
+	unsigned int cpt;
+	int cid;
+
+	while (buf < end)
+	{
+		int w = pdf_decode_cmap(fontdesc->encoding, buf, end, &cpt);
+		buf += w;
+
+		cid = pdf_lookup_cmap(fontdesc->encoding, cpt);
+		if (cid >= 0)
+			pdf_show_char(ctx, pr, cid);
+		else
+			hd_warn(ctx, "cannot encode character");
+	}
 }
 
 static void
 pdf_show_string(hd_context *ctx, pdf_run_processor *pr, unsigned char *buf, int len)
 {
+	pdf_font_desc *fontdesc = pr->fontdesc;
+
+	if (!fontdesc)
+	{
+		hd_warn(ctx, "cannot draw text since font and size not set");
+		return;
+	}
+
 	show_string(ctx, pr, buf, len);
 }
 
@@ -57,6 +144,12 @@ static void pdf_run_BT(hd_context *ctx, pdf_processor *proc)
 static void pdf_run_ET(hd_context *ctx, pdf_processor *proc)
 {
 
+}
+
+static void pdf_run_Tf(hd_context *ctx, pdf_processor *proc, const char *name, pdf_font_desc *font, float size)
+{
+	pdf_run_processor *pr = (pdf_run_processor *)proc;
+	pr->fontdesc = font;
 }
 
 /* text showing */
@@ -94,6 +187,8 @@ pdf_new_run_processor(hd_context *ctx, const char *usage, int nested)
 		/* text objects */
 		proc->super.op_BT = pdf_run_BT;
 		proc->super.op_ET = pdf_run_ET;
+
+        proc->super.op_Tf = pdf_run_Tf;
 
 		/* text showing */
 		proc->super.op_TJ = pdf_run_TJ;
