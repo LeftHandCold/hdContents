@@ -31,6 +31,7 @@ typedef struct cmap_splay_s cmap_splay;
 
 struct pdf_cmap_s
 {
+    hd_storable storable;
     char cmap_name[32];
 
     char usecmap_name[32];
@@ -66,7 +67,7 @@ struct pdf_cmap_s
 pdf_cmap *pdf_new_cmap(hd_context *ctx);
 pdf_cmap *pdf_keep_cmap(hd_context *ctx, pdf_cmap *cmap);
 void pdf_drop_cmap(hd_context *ctx, pdf_cmap *cmap);
-void pdf_drop_cmap_imp(hd_context *ctx);
+void pdf_drop_cmap_imp(hd_context *ctx,  hd_storable *cmap);
 size_t pdf_cmap_size(hd_context *ctx, pdf_cmap *cmap);
 
 int pdf_cmap_wmode(hd_context *ctx, pdf_cmap *cmap);

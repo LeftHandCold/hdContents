@@ -16,6 +16,7 @@ typedef struct hd_alloc_context_s hd_alloc_context;
 typedef struct hd_error_context_s hd_error_context;
 typedef struct hd_error_stack_slot_s hd_error_stack_slot;
 typedef struct hd_warn_context_s hd_warn_context;
+typedef struct hd_store_s hd_store;
 typedef struct hd_document_handler_context_s hd_document_handler_context;
 typedef struct hd_context_s hd_context;
 
@@ -92,13 +93,6 @@ struct hd_warn_context_s
 {
     char message[256];
     int count;
-};
-
-enum {
-    HD_LOCK_ALLOC = 0,
-    HD_LOCK_FREETYPE,
-    HD_LOCK_GLYPHCACHE,
-    HD_LOCK_MAX
 };
 
 /*
@@ -226,8 +220,8 @@ struct hd_context_s
     const hd_alloc_context *alloc;
     hd_error_context *error;
     hd_warn_context *warn;
+    hd_store *store;
     hd_document_handler_context *handler;
-
 
 	//Extracted contents
 	unsigned int flush_size;
@@ -255,9 +249,9 @@ enum {
 
 	Does not throw exceptions, but may return NULL.
 */
-hd_context *hd_new_context_imp(const hd_alloc_context *alloc, const char *version);
+hd_context *hd_new_context_imp(const hd_alloc_context *alloc, size_t max_store, const char *version);
 
-#define hd_new_context(alloc) hd_new_context_imp(alloc, FZ_VERSION);
+#define hd_new_context(alloc, max_store) hd_new_context_imp(alloc, max_store, HD_VERSION);
 /*
 	hd_drop_context: Free a context and its global state.
 

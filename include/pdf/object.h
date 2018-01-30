@@ -142,6 +142,8 @@ void pdf_dict_dels(hd_context *ctx, pdf_obj *dict, const char *key);
 
 int pdf_obj_parent_num(hd_context *ctx, pdf_obj *obj);
 
+int pdf_sprint_obj(hd_context *ctx, char *s, int n, pdf_obj *obj, int tight);
+
 pdf_obj *pdf_keep_obj(hd_context *ctx, pdf_obj *obj);
 void pdf_drop_obj(hd_context *ctx, pdf_obj *obj);
 

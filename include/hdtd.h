@@ -15,6 +15,7 @@ extern "C" {
 #include "hdtd/context.h"
 
 #include "hdtd/string-util.h"
+#include "hdtd/hash.h"
 
 /* I/O */
 #include "hdtd/buffer.h"
@@ -24,6 +25,9 @@ extern "C" {
 
 /* Document */
 #include "hdtd/document.h"
+
+/* Resources */
+#include "hdtd/store.h"
 
 #ifdef __cplusplus
 }

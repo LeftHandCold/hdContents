@@ -5,9 +5,10 @@
 #include "pdf.h"
 
 void
-pdf_drop_cmap(hd_context *ctx, pdf_cmap *cmap)
+pdf_drop_cmap_imp(hd_context *ctx, hd_storable *cmap_)
 {
-    //pdf_drop_cmap(ctx, cmap->usecmap);
+    pdf_cmap *cmap = (pdf_cmap *)cmap_;
+    pdf_drop_cmap(ctx, cmap->usecmap);
     hd_free(ctx, cmap->ranges);
     hd_free(ctx, cmap->xranges);
     hd_free(ctx, cmap->mranges);
@@ -20,7 +21,22 @@ pdf_cmap *
 pdf_new_cmap(hd_context *ctx)
 {
     pdf_cmap *cmap = hd_malloc_struct(ctx, pdf_cmap);
+    HD_INIT_STORABLE(cmap, 1, pdf_drop_cmap_imp);
     return cmap;
+}
+
+/* Could be a macro for speed */
+pdf_cmap *
+pdf_keep_cmap(hd_context *ctx, pdf_cmap *cmap)
+{
+    return hd_keep_storable(ctx, &cmap->storable);
+}
+
+/* Could be a macro for speed */
+void
+pdf_drop_cmap(hd_context *ctx, pdf_cmap *cmap)
+{
+    hd_drop_storable(ctx, &cmap->storable);
 }
 
 int
@@ -318,7 +334,7 @@ static unsigned int delete_node(pdf_cmap *cmap, unsigned int current)
     /* Return the node that we should continue searching from */
     return replacement;
 }
-
+//#define DUMP_SPLAY
 #ifdef DUMP_SPLAY
 static void
 dump_splay(cmap_splay *tree, unsigned int node, int depth, const char *pre)

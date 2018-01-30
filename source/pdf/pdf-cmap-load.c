@@ -30,10 +30,18 @@ pdf_load_embedded_cmap(hd_context *ctx, pdf_document *doc, pdf_obj *stmobj)
     hd_var(file);
     hd_var(cmap);
 
+    if ((cmap = pdf_find_item(ctx, pdf_drop_cmap_imp, stmobj)) != NULL)
+        return cmap;
+
+    hd_var(file);
+    hd_var(cmap);
+
     hd_try(ctx)
     {
         file = pdf_open_stream(ctx, stmobj);
         cmap = pdf_load_cmap(ctx, file);
+
+        pdf_store_item(ctx, stmobj, cmap, pdf_cmap_size(ctx, cmap));
 
     }
     hd_always(ctx)

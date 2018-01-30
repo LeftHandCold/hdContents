@@ -4,6 +4,9 @@
 #include "hdtd.h"
 #include "pdf.h"
 
+/* Maximum number of errors before aborting */
+#define MAX_SYNTAX_ERRORS 100
+
 void *
 pdf_new_processor(hd_context *ctx, int size)
 {
@@ -58,9 +61,7 @@ load_font_or_hail_mary(hd_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj
     return desc;
 }
 
-#define A(a) (a)
 #define B(a,b) (a | b << 8)
-#define C(a,b,c) (a | b << 8 | c << 16)
 
 static void
 pdf_process_keyword(hd_context *ctx, pdf_processor *proc, pdf_csi *csi, hd_stream *stm, char *word)
@@ -301,7 +302,24 @@ pdf_process_stream(hd_context *ctx, pdf_processor *proc, pdf_csi *csi, hd_stream
         }
         hd_catch(ctx)
         {
-
+            int caught = hd_caught(ctx);
+            if (caught == HD_ERROR_TRYLATER)
+                hd_rethrow(ctx);
+            else if (caught == HD_ERROR_ABORT)
+                hd_rethrow(ctx);
+            else if (caught == HD_ERROR_SYNTAX)
+            {
+                if (++syntax_errors >= MAX_SYNTAX_ERRORS)
+                {
+                    hd_warn(ctx, "too many syntax errors; ignoring rest of page");
+                    tok = PDF_TOK_EOF;
+                }
+            }
+            else
+            {
+                hd_warn(ctx, "unrecoverable error; ignoring rest of page");
+                tok = PDF_TOK_EOF;
+            }
         }
     }
     while (tok != PDF_TOK_EOF);
@@ -339,6 +357,5 @@ pdf_process_contents(hd_context *ctx, pdf_processor *proc, pdf_document *doc, pd
 	{
 		hd_rethrow(ctx);
 	}
-
 
 }

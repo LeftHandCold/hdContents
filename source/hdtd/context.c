@@ -11,6 +11,7 @@ hd_drop_context(hd_context *ctx)
 
     /* Other finalisation calls go here (in reverse order) */
     hd_drop_document_handler_context(ctx);
+    hd_drop_store_context(ctx);
 
     if (ctx->warn)
     {
@@ -66,13 +67,13 @@ new_context_phase1(const hd_alloc_context *alloc)
 }
 
 hd_context *
-hd_new_context_imp(const hd_alloc_context *alloc, const char *version)
+hd_new_context_imp(const hd_alloc_context *alloc, size_t max_store, const char *version)
 {
     hd_context *ctx;
 
-    if (strcmp(version, FZ_VERSION))
+    if (strcmp(version, HD_VERSION))
     {
-        fprintf(stderr, "cannot create context: incompatible header (%s) and library (%s) versions\n", version, FZ_VERSION);
+        fprintf(stderr, "cannot create context: incompatible header (%s) and library (%s) versions\n", version, HD_VERSION);
         return NULL;
     }
 
@@ -91,6 +92,7 @@ hd_new_context_imp(const hd_alloc_context *alloc, const char *version)
     hd_try(ctx)
     {
         hd_new_document_handler_context(ctx);
+        hd_new_store_context(ctx, max_store);
     }
     hd_catch(ctx)
     {

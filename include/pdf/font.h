@@ -11,6 +11,7 @@ typedef struct pdf_font_desc_s pdf_font_desc;
 
 struct pdf_font_desc_s
 {
+    hd_storable storable;
     size_t size;
 
     /* FontDescriptor */

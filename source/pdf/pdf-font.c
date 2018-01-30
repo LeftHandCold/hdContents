@@ -4,12 +4,30 @@
 #include "hdtd.h"
 #include "pdf.h"
 
+/*
+ * Create and destroy
+ */
+
+pdf_font_desc *
+pdf_keep_font(hd_context *ctx, pdf_font_desc *fontdesc)
+{
+    return hd_keep_storable(ctx, &fontdesc->storable);
+}
+
 void
 pdf_drop_font(hd_context *ctx, pdf_font_desc *fontdesc)
 {
-    /*pdf_drop_cmap(ctx, fontdesc->encoding);
-    pdf_drop_cmap(ctx, fontdesc->to_ttf_cmap);
-    pdf_drop_cmap(ctx, fontdesc->to_unicode);*/
+    hd_drop_storable(ctx, &fontdesc->storable);
+}
+
+static void
+pdf_drop_font_imp(hd_context *ctx, hd_storable *fontdesc_)
+{
+    pdf_font_desc *fontdesc = (pdf_font_desc *)fontdesc_;
+
+    pdf_drop_cmap(ctx, fontdesc->encoding);
+    //pdf_drop_cmap(ctx, fontdesc->to_ttf_cmap);
+    pdf_drop_cmap(ctx, fontdesc->to_unicode);
     //hd_free(ctx, fontdesc->cid_to_gid);
     //hd_free(ctx, fontdesc->cid_to_ucs);
     hd_free(ctx, fontdesc);
@@ -52,24 +70,15 @@ static inline int hd_mini(int a, int b)
 static pdf_font_desc *
 load_cid_font(hd_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encoding, pdf_obj *to_unicode)
 {
-    pdf_obj *widths;
-    pdf_obj *descriptor;
     pdf_font_desc *fontdesc = NULL;
     pdf_cmap *cmap;
     char collection[256];
-    const char *basefont;
-    int i, k;
     pdf_obj *obj;
-    int dw;
 
     hd_var(fontdesc);
 
     hd_try(ctx)
     {
-
-        /* Get font name and CID collection */
-
-        basefont = pdf_to_name(ctx, pdf_dict_get(ctx, dict, PDF_NAME_BaseFont));
 
         {
             pdf_obj *cidinfo;
@@ -137,79 +146,6 @@ load_cid_font(hd_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
     return fontdesc;
 }
 
-/*
- * FreeType and Rendering glue
- */
-
-enum { UNKNOWN, TYPE1, TRUETYPE };
-
-static pdf_font_desc *
-pdf_load_simple_font_by_name(hd_context *ctx, pdf_document *doc, pdf_obj *dict, const char *basefont)
-{
-    pdf_obj *descriptor;
-    pdf_obj *encoding;
-    pdf_obj *widths;
-    unsigned short *etable = NULL;
-    pdf_font_desc *fontdesc = NULL;
-    pdf_obj *subtype;
-    int symbolic;
-    int kind;
-    int glyph;
-
-    const char *estrings[256];
-    char ebuffer[256][32];
-    int i, k, n;
-    int fterr;
-    int has_lock = 0;
-
-    hd_var(fontdesc);
-    hd_var(etable);
-    hd_var(has_lock);
-
-    /* Load font file */
-    hd_try(ctx)
-    {
-        fontdesc = pdf_new_font_desc(ctx);
-
-        /* Some chinese documents mistakenly consider WinAnsiEncoding to be codepage 936 */
-        if (descriptor && pdf_is_string(ctx, pdf_dict_get(ctx, descriptor, PDF_NAME_FontName)) &&
-            !pdf_dict_get(ctx, dict, PDF_NAME_ToUnicode) &&
-            pdf_name_eq(ctx, pdf_dict_get(ctx, dict, PDF_NAME_Encoding), PDF_NAME_WinAnsiEncoding) &&
-            pdf_to_int(ctx, pdf_dict_get(ctx, descriptor, PDF_NAME_Flags)) == 4)
-        {
-            char *cp936fonts[] = {
-                    "\xCB\xCE\xCC\xE5", "SimSun,Regular",
-                    "\xBA\xDA\xCC\xE5", "SimHei,Regular",
-                    "\xBF\xAC\xCC\xE5_GB2312", "SimKai,Regular",
-                    "\xB7\xC2\xCB\xCE_GB2312", "SimFang,Regular",
-                    "\xC1\xA5\xCA\xE9", "SimLi,Regular",
-                    NULL
-            };
-            for (i = 0; cp936fonts[i]; i += 2)
-                if (!strcmp(basefont, cp936fonts[i]))
-                    break;
-            if (cp936fonts[i])
-            {
-                hd_warn(ctx, "workaround for S22PDF lying about chinese font encodings");
-                pdf_drop_font(ctx, fontdesc);
-                fontdesc = NULL;
-                fontdesc = pdf_new_font_desc(ctx);
-                fontdesc->encoding = pdf_load_system_cmap(ctx, "GBK-EUC-H");
-                fontdesc->to_unicode = pdf_load_system_cmap(ctx, "Adobe-GB1-UCS2");
-                fontdesc->to_ttf_cmap = pdf_load_system_cmap(ctx, "Adobe-GB1-UCS2");
-            }
-        }
-    }
-    hd_catch(ctx)
-    {
-        if (fontdesc && etable != fontdesc->cid_to_gid)
-            hd_free(ctx, etable);
-        pdf_drop_font(ctx, fontdesc);
-        hd_rethrow(ctx);
-    }
-    return fontdesc;
-}
-
 static pdf_font_desc *
 pdf_load_type0_font(hd_context *ctx, pdf_document *doc, pdf_obj *dict)
 {
@@ -236,21 +172,16 @@ pdf_load_type0_font(hd_context *ctx, pdf_document *doc, pdf_obj *dict)
     hd_throw(ctx, HD_ERROR_SYNTAX, "unknown cid font type");
 }
 
-static pdf_font_desc *
-pdf_load_simple_font(hd_context *ctx, pdf_document *doc, pdf_obj *dict)
-{
-    const char *basefont = pdf_to_name(ctx, pdf_dict_get(ctx, dict, PDF_NAME_BaseFont));
-    return pdf_load_simple_font_by_name(ctx, doc, dict, basefont);
-}
-
 pdf_font_desc *
 pdf_load_font(hd_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *dict, int nested_depth)
 {
     pdf_obj *subtype;
-    pdf_obj *dfonts;
-    pdf_obj *charprocs;
     pdf_font_desc *fontdesc = NULL;
-    int type3 = 0;
+
+    if ((fontdesc = pdf_find_item(ctx, pdf_drop_font_imp, dict)) != NULL)
+    {
+        return fontdesc;
+    }
 
     subtype = pdf_dict_get(ctx, dict, PDF_NAME_Subtype);
 
@@ -273,7 +204,8 @@ pdf_load_font(hd_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *dict, i
         hd_rethrow(ctx);
     }
 
-    //pdf_store_item(ctx, dict, fontdesc, fontdesc->size);
+    if (fontdesc != NULL)
+        pdf_store_item(ctx, dict, fontdesc, fontdesc->size);
 
     return fontdesc;
 }

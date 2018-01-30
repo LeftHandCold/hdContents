@@ -18,6 +18,7 @@ extern "C" {
 #include "pdf/xref.h"
 
 #include "pdf/page.h"
+#include "pdf/resource.h"
 #include "pdf/cmap.h"
 #include "pdf/font.h"
 

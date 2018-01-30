@@ -1577,3 +1577,343 @@ int pdf_obj_parent_num(hd_context *ctx, pdf_obj *obj)
             return 0;
     }
 }
+
+
+/* Pretty printing objects */
+
+struct fmt
+{
+    char *buf;
+    int cap;
+    int len;
+    int indent;
+    int tight;
+    int col;
+    int sep;
+    int last;
+    int num;
+    int gen;
+};
+
+static void fmt_obj(hd_context *ctx, struct fmt *fmt, pdf_obj *obj);
+
+static inline int iswhite(int ch)
+{
+    return
+            ch == '\000' ||
+            ch == '\011' ||
+            ch == '\012' ||
+            ch == '\014' ||
+            ch == '\015' ||
+            ch == '\040';
+}
+
+static inline int isdelim(int ch)
+{
+    return
+            ch == '(' || ch == ')' ||
+            ch == '<' || ch == '>' ||
+            ch == '[' || ch == ']' ||
+            ch == '{' || ch == '}' ||
+            ch == '/' ||
+            ch == '%';
+}
+
+static inline void fmt_putc(hd_context *ctx, struct fmt *fmt, int c)
+{
+    if (fmt->sep && !isdelim(fmt->last) && !isdelim(c)) {
+        fmt->sep = 0;
+        fmt_putc(ctx, fmt, ' ');
+    }
+    fmt->sep = 0;
+
+    if (fmt->buf && fmt->len < fmt->cap)
+        fmt->buf[fmt->len] = c;
+
+    if (c == '\n')
+        fmt->col = 0;
+    else
+        fmt->col ++;
+
+    fmt->len ++;
+
+    fmt->last = c;
+}
+
+static inline void fmt_indent(hd_context *ctx, struct fmt *fmt)
+{
+    int i = fmt->indent;
+    while (i--) {
+        fmt_putc(ctx, fmt, ' ');
+        fmt_putc(ctx, fmt, ' ');
+    }
+}
+
+static inline void fmt_puts(hd_context *ctx, struct fmt *fmt, char *s)
+{
+    while (*s)
+        fmt_putc(ctx, fmt, *s++);
+}
+
+static inline void fmt_sep(hd_context *ctx, struct fmt *fmt)
+{
+    fmt->sep = 1;
+}
+
+static void fmt_str_out(hd_context *ctx, void *fmt_, const unsigned char *s, int n)
+{
+    struct fmt *fmt = (struct fmt *)fmt_;
+    int i, c;
+
+    for (i = 0; i < n; i++)
+    {
+        c = (unsigned char)s[i];
+        if (c == '\n')
+            fmt_puts(ctx, fmt, "\\n");
+        else if (c == '\r')
+            fmt_puts(ctx, fmt, "\\r");
+        else if (c == '\t')
+            fmt_puts(ctx, fmt, "\\t");
+        else if (c == '\b')
+            fmt_puts(ctx, fmt, "\\b");
+        else if (c == '\f')
+            fmt_puts(ctx, fmt, "\\f");
+        else if (c == '(')
+            fmt_puts(ctx, fmt, "\\(");
+        else if (c == ')')
+            fmt_puts(ctx, fmt, "\\)");
+        else if (c == '\\')
+            fmt_puts(ctx, fmt, "\\\\");
+        else if (c < 32 || c >= 127) {
+            fmt_putc(ctx, fmt, '\\');
+            fmt_putc(ctx, fmt, '0' + ((c / 64) & 7));
+            fmt_putc(ctx, fmt, '0' + ((c / 8) & 7));
+            fmt_putc(ctx, fmt, '0' + ((c) & 7));
+        }
+        else
+            fmt_putc(ctx, fmt, c);
+    }
+}
+
+static void fmt_str(hd_context *ctx, struct fmt *fmt, pdf_obj *obj)
+{
+    unsigned char *s = (unsigned char *)pdf_to_str_buf(ctx, obj);
+    int n = pdf_to_str_len(ctx, obj);
+
+    fmt_putc(ctx, fmt, '(');
+    fmt_str_out(ctx, fmt, s, n);
+    fmt_putc(ctx, fmt, ')');
+}
+
+static void fmt_hex_out(hd_context *ctx, void *arg, const unsigned char *s, int n)
+{
+    struct fmt *fmt = (struct fmt *)arg;
+    int i, b, c;
+
+    for (i = 0; i < n; i++) {
+        b = (unsigned char) s[i];
+        c = (b >> 4) & 0x0f;
+        fmt_putc(ctx, fmt, c < 0xA ? c + '0' : c + 'A' - 0xA);
+        c = (b) & 0x0f;
+        fmt_putc(ctx, fmt, c < 0xA ? c + '0' : c + 'A' - 0xA);
+    }
+}
+
+static void fmt_hex(hd_context *ctx, struct fmt *fmt, pdf_obj *obj)
+{
+    unsigned char *s = (unsigned char *)pdf_to_str_buf(ctx, obj);
+    int n = pdf_to_str_len(ctx, obj);
+
+    fmt_putc(ctx, fmt, '<');
+    fmt_hex_out(ctx, fmt, s, n);
+    fmt_putc(ctx, fmt, '>');
+}
+
+static void fmt_name(hd_context *ctx, struct fmt *fmt, pdf_obj *obj)
+{
+    unsigned char *s = (unsigned char *) pdf_to_name(ctx, obj);
+    int i, c;
+
+    fmt_putc(ctx, fmt, '/');
+
+    for (i = 0; s[i]; i++)
+    {
+        if (isdelim(s[i]) || iswhite(s[i]) ||
+            s[i] == '#' || s[i] < 32 || s[i] >= 127)
+        {
+            fmt_putc(ctx, fmt, '#');
+            c = (s[i] >> 4) & 0xf;
+            fmt_putc(ctx, fmt, c < 0xA ? c + '0' : c + 'A' - 0xA);
+            c = s[i] & 0xf;
+            fmt_putc(ctx, fmt, c < 0xA ? c + '0' : c + 'A' - 0xA);
+        }
+        else
+        {
+            fmt_putc(ctx, fmt, s[i]);
+        }
+    }
+}
+
+static void fmt_array(hd_context *ctx, struct fmt *fmt, pdf_obj *obj)
+{
+    int i, n;
+
+    n = pdf_array_len(ctx, obj);
+    if (fmt->tight) {
+        fmt_putc(ctx, fmt, '[');
+        for (i = 0; i < n; i++) {
+            fmt_obj(ctx, fmt, pdf_array_get(ctx, obj, i));
+            fmt_sep(ctx, fmt);
+        }
+        fmt_putc(ctx, fmt, ']');
+    }
+    else {
+        fmt_putc(ctx, fmt, '[');
+        fmt->indent ++;
+        for (i = 0; i < n; i++) {
+            if (fmt->col > 60) {
+                fmt_putc(ctx, fmt, '\n');
+                fmt_indent(ctx, fmt);
+            } else {
+                fmt_putc(ctx, fmt, ' ');
+            }
+            fmt_obj(ctx, fmt, pdf_array_get(ctx, obj, i));
+        }
+        fmt->indent --;
+        fmt_putc(ctx, fmt, ' ');
+        fmt_putc(ctx, fmt, ']');
+        fmt_sep(ctx, fmt);
+    }
+}
+
+static void fmt_dict(hd_context *ctx, struct fmt *fmt, pdf_obj *obj)
+{
+    int i, n;
+    pdf_obj *key, *val;
+
+    n = pdf_dict_len(ctx, obj);
+    if (fmt->tight) {
+        fmt_puts(ctx, fmt, "<<");
+        for (i = 0; i < n; i++) {
+            fmt_obj(ctx, fmt, pdf_dict_get_key(ctx, obj, i));
+            fmt_sep(ctx, fmt);
+            fmt_obj(ctx, fmt, pdf_dict_get_val(ctx, obj, i));
+            fmt_sep(ctx, fmt);
+        }
+        fmt_puts(ctx, fmt, ">>");
+    }
+    else {
+        fmt_puts(ctx, fmt, "<<\n");
+        fmt->indent ++;
+        for (i = 0; i < n; i++) {
+            key = pdf_dict_get_key(ctx, obj, i);
+            val = pdf_dict_get_val(ctx, obj, i);
+            fmt_indent(ctx, fmt);
+            fmt_obj(ctx, fmt, key);
+            fmt_putc(ctx, fmt, ' ');
+            if (!pdf_is_indirect(ctx, val) && pdf_is_array(ctx, val))
+                fmt->indent ++;
+            fmt_obj(ctx, fmt, val);
+            fmt_putc(ctx, fmt, '\n');
+            if (!pdf_is_indirect(ctx, val) && pdf_is_array(ctx, val))
+                fmt->indent --;
+        }
+        fmt->indent --;
+        fmt_indent(ctx, fmt);
+        fmt_puts(ctx, fmt, ">>");
+    }
+}
+
+static void count_data(hd_context *ctx, void *arg, const unsigned char *str, int len)
+{
+    int *encrypted_len = (int *)arg;
+    int added = 0;
+    int i;
+    unsigned char c;
+
+    for (i = 0; i < len; i++) {
+        c = (unsigned char)str[i];
+        if (c != 0 && strchr("()\\\n\r\t\b\f", c))
+            added ++;
+        else if (c < 32 || c >= 127)
+            added += 3;
+    }
+    *encrypted_len += added;
+}
+
+static void fmt_obj(hd_context *ctx, struct fmt *fmt, pdf_obj *obj)
+{
+    char buf[256];
+
+    if (!obj)
+        fmt_puts(ctx, fmt, "<NULL>");
+    else if (pdf_is_indirect(ctx, obj))
+    {
+        snprintf(buf, sizeof buf, "%d %d R", pdf_to_num(ctx, obj), pdf_to_gen(ctx, obj));
+        fmt_puts(ctx, fmt, buf);
+    }
+    else if (pdf_is_null(ctx, obj))
+        fmt_puts(ctx, fmt, "null");
+    else if (pdf_is_bool(ctx, obj))
+        fmt_puts(ctx, fmt, pdf_to_bool(ctx, obj) ? "true" : "false");
+    else if (pdf_is_int(ctx, obj))
+    {
+        snprintf(buf, sizeof buf, "%d", pdf_to_int(ctx, obj));
+        fmt_puts(ctx, fmt, buf);
+    }
+    else if (pdf_is_real(ctx, obj))
+    {
+        snprintf(buf, sizeof buf, "%g", pdf_to_real(ctx, obj));
+        fmt_puts(ctx, fmt, buf);
+    }
+    else if (pdf_is_string(ctx, obj))
+    {
+        unsigned char *str = (unsigned char *)pdf_to_str_buf(ctx, obj);
+        int len = pdf_to_str_len(ctx, obj);
+        int encoded_len = 0;
+
+        count_data(ctx, &encoded_len, str, len);
+        if (encoded_len < 2*len)
+            fmt_str(ctx, fmt, obj);
+        else
+            fmt_hex(ctx, fmt, obj);
+    }
+    else if (pdf_is_name(ctx, obj))
+        fmt_name(ctx, fmt, obj);
+    else if (pdf_is_array(ctx, obj))
+        fmt_array(ctx, fmt, obj);
+    else if (pdf_is_dict(ctx, obj))
+        fmt_dict(ctx, fmt, obj);
+    else
+        fmt_puts(ctx, fmt, "<unknown object>");
+}
+
+int
+pdf_sprint_encrypted_obj(hd_context *ctx, char *s, int n, pdf_obj *obj, int tight, int num, int gen)
+{
+    struct fmt fmt;
+
+    fmt.indent = 0;
+    fmt.col = 0;
+    fmt.sep = 0;
+    fmt.last = 0;
+
+    fmt.tight = tight;
+    fmt.buf = s;
+    fmt.cap = n;
+    fmt.len = 0;
+    fmt.num = num;
+    fmt.gen = gen;
+    fmt_obj(ctx, &fmt, obj);
+
+    if (fmt.buf && fmt.len < fmt.cap)
+        fmt.buf[fmt.len] = '\0';
+
+    return fmt.len;
+}
+
+int
+pdf_sprint_obj(hd_context *ctx, char *s, int n, pdf_obj *obj, int tight)
+{
+    return pdf_sprint_encrypted_obj(ctx, s, n, obj, tight, 0, 0);
+}
