@@ -196,4 +196,6 @@ pdf_new_run_processor(hd_context *ctx, const char *usage, int nested)
 
 		proc->super.op_END = pdf_run_END;
 	}
+
+	return proc;
 }

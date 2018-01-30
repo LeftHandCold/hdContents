@@ -115,7 +115,7 @@ int main() {
 
     /* Open the document. */
     hd_try(ctx)
-        doc = hd_open_document(ctx, "F:\\f0711656.pdf");
+        doc = hd_open_document(ctx, "/Users/sjw/Documents/debugfile/f0711656.pdf");
     hd_catch(ctx) {
         fprintf(stderr, "cannot open document: %s\n", hd_caught_message(ctx));
         hd_drop_context(ctx);
@@ -133,7 +133,7 @@ int main() {
         unicode_to_utf8(filenameUtf8, buf, 32);
         FILE *fp;
 
-        fp=fopen("F:\\test.txt","a+");
+        fp=fopen("/Users/sjw/Documents/debugfile/test","a+");
         fprintf(fp,"%s",filenameUtf8);
         fclose(fp);
     }
