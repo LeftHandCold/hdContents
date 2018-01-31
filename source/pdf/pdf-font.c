@@ -114,11 +114,12 @@ load_cid_font(hd_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
             else
             {
                 //TODO:pdf_load_system_cmap
+				cmap = NULL;
             }
         }
         else if (pdf_is_indirect(ctx, encoding))
         {
-            //TODO:pdf_load_embedded_cmap
+			cmap = pdf_load_embedded_cmap(ctx, doc, encoding);
         }
         else
         {
