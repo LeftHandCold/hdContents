@@ -673,11 +673,11 @@ pdf_array_push_drop(hd_context *ctx, pdf_obj *obj, pdf_obj *item)
     if (obj >= PDF_OBJ__LIMIT)
     {
         hd_try(ctx)
-        pdf_array_push(ctx, obj, item);
+            pdf_array_push(ctx, obj, item);
         hd_always(ctx)
-        pdf_drop_obj(ctx, item);
+            pdf_drop_obj(ctx, item);
         hd_catch(ctx)
-        hd_rethrow(ctx);
+            hd_rethrow(ctx);
     }
 }
 

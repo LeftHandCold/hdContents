@@ -78,16 +78,47 @@ static void
 show_string(hd_context *ctx, pdf_run_processor *pr, unsigned char *buf, int len)
 {
 	pdf_font_desc *fontdesc = pr->fontdesc;
-    if (fontdesc == NULL)
-    {
-        return;
-    }
-    unsigned char *end = buf + len;
+	unsigned char *end = buf + len;
 	unsigned int cpt;
 	int cid;
+    if (fontdesc == NULL)
+    {
+		//TODO:Temporarily think *buf is English char*
+		for (int i = 0; i < len; ++i)
+		{
+			wchar_t *wc = (wchar_t *)&buf[i];
+			switch (*wc)
+			{
+				case '/':
+				case '\\':
+				case '*':
+				case '<':
+				case '>':
+				case '|':
+				case '\'':
+				case 0x0D:
+				case 0x20:
+				case '.':
+				case ':':
+					break;
+				default:
+					if (((*wc >= 'a' && *wc <= 'z')
+						 || (*wc >= 'A' && *wc <= 'Z')
+						 || (*wc >= '0' && *wc <= '9')))
+					{
+						memcpy(ctx->contents + ctx->flush_size, (wchar_t *)&buf[i], 2);
+						ctx->flush_size += 2;
+					}
+					break;
+			}
+		}
+
+        return;
+    }
 
 	while (buf < end)
 	{
+
 		int w = pdf_decode_cmap(fontdesc->encoding, buf, end, &cpt);
 		buf += w;
 
