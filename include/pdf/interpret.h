@@ -59,16 +59,9 @@ struct pdf_csi_s
 	pdf_new_run_processor: Create a new "run" processor. This maps
 	from PDF operators to hd_device level calls.
 
-	dev: The device to which the resulting device calls are to be
-	sent.
-
-	ctm: The initial transformation matrix to use.
-
 	usage: A NULL terminated string that describes the 'usage' of
 	this interpretation. Typically 'View', though 'Print' is also
 	defined within the PDF reference manual, and others are possible.
-
-	gstate: The initial graphics state.
 
 	nested: The nested depth of this interpreter. This should be
 	0 for an initial call, and will be incremented in nested calls

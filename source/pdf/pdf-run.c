@@ -34,7 +34,7 @@ pdf_run_page_contents_with_usage(hd_context *ctx, pdf_document *doc, pdf_page *p
         pdf_drop_processor(ctx, proc);
     }
     hd_catch(ctx)
-    hd_rethrow(ctx);
+        hd_rethrow(ctx);
 }
 
 void pdf_run_page_contents(hd_context *ctx, pdf_page *page, char* buf)

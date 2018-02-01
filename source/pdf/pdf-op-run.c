@@ -9,8 +9,6 @@ typedef struct pdf_run_processor_s pdf_run_processor;
 struct pdf_run_processor_s
 {
 	pdf_processor super;
-	int clip;
-	int clip_even_odd;
 	pdf_font_desc *fontdesc;
 
 };
@@ -19,11 +17,8 @@ static void
 pdf_show_char(hd_context *ctx, pdf_run_processor *pr, int cid)
 {
 	pdf_font_desc *fontdesc = pr->fontdesc;
-	int gid;
 	int ucsbuf[8];
 	int ucslen;
-	int i;
-	int render_direct;
 
 
 	ucslen = 0;
@@ -71,7 +66,6 @@ pdf_show_char(hd_context *ctx, pdf_run_processor *pr, int cid)
 				break;
 		}
 	}
-
 }
 
 static void
@@ -204,7 +198,8 @@ static void pdf_run_END(hd_context *ctx, pdf_processor *proc)
 static void
 pdf_drop_run_processor(hd_context *ctx, pdf_processor *proc)
 {
-
+	pdf_run_processor *pr = (pdf_run_processor *)proc;
+	pdf_drop_font(ctx, pr->fontdesc);
 }
 
 pdf_processor *

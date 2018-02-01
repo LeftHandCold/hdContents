@@ -61,6 +61,13 @@ load_font_or_hail_mary(hd_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj
     return desc;
 }
 
+static void
+pdf_process_end(hd_context *ctx, pdf_processor *proc)
+{
+    if (proc->op_END)
+        proc->op_END(ctx, proc);
+}
+
 #define B(a,b) (a | b << 8)
 
 static void
@@ -345,7 +352,7 @@ pdf_process_contents(hd_context *ctx, pdf_processor *proc, pdf_document *doc, pd
 	{
 		stm = pdf_open_contents_stream(ctx, doc, stmobj);
 		pdf_process_stream(ctx, proc, &csi, stm);
-		//pdf_process_end(ctx, proc, &csi);
+		pdf_process_end(ctx, proc);
 	}
 	hd_always(ctx)
 	{
