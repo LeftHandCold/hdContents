@@ -71,4 +71,6 @@ pdf_obj *pdf_trailer(hd_context *ctx, pdf_document *doc);
 int pdf_xref_len(hd_context *ctx, pdf_document *doc);
 pdf_xref_entry *pdf_get_xref_entry(hd_context *ctx, pdf_document *doc, int i);
 
+void pdf_repair_xref(hd_context *ctx, pdf_document *doc);
+
 #endif //HDCONTENTS_PDF_XREF_H

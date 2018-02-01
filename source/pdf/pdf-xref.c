@@ -417,7 +417,7 @@ pdf_xref_size_from_old_trailer(hd_context *ctx, pdf_document *doc, pdf_lexbuf *b
         if (tok != PDF_TOK_OPEN_DICT)
             hd_throw(ctx, HD_ERROR_GENERIC, "expected trailer dictionary");
 
-		//XXX:There's another call in pdf_read_old_xref
+		//TODO:There's another call in pdf_read_old_xref
         trailer = pdf_parse_dict(ctx, doc, doc->file, buf);
 
         size = pdf_to_int(ctx, pdf_dict_get(ctx, trailer, PDF_NAME_Size));
@@ -922,6 +922,9 @@ pdf_init_document(hd_context *ctx, pdf_document *doc)
 		if (repaired)
 		{
 			/*TODO:Some files are not at the bottom of the xref*/
+			/* pdf_repair_xref may access xref_index, so reset it properly */
+			memset(doc->xref_index, 0, sizeof(int) * doc->max_xref_len);
+			pdf_repair_xref(ctx, doc);
 		}
 	}
 	hd_catch(ctx)
