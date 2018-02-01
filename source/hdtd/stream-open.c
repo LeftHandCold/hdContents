@@ -175,7 +175,7 @@ hd_open_buffer(hd_context *ctx, hd_buffer *buf)
 
     hd_keep_buffer(ctx, buf);
     stm = hd_new_stream(ctx, buf, next_buffer, close_buffer);
-    stm->seek = seek_buffer;
+    stm->seek = (hd_stream_seek_fn *)seek_buffer;
 
     stm->rp = buf->data;
     stm->wp = buf->data + buf->len;
