@@ -132,7 +132,12 @@ pdf_lookup_page_loc(hd_context *ctx, pdf_document *doc, int needle, pdf_obj **pa
 pdf_obj *
 pdf_lookup_page_obj(hd_context *ctx, pdf_document *doc, int needle)
 {
-    return pdf_lookup_page_loc(ctx, doc, needle, NULL, NULL);
+    pdf_obj *hit;
+    hd_try(ctx)
+        hit = pdf_lookup_page_loc(ctx, doc, needle, NULL, NULL);
+    hd_catch(ctx)
+        hd_rethrow(ctx);
+    return hit;
 }
 
 static pdf_obj *
@@ -210,7 +215,10 @@ pdf_load_page(hd_context *ctx, pdf_document *doc, int number)
     pdf_page *page;
     pdf_obj *pageobj, *obj;
 
-    pageobj = pdf_lookup_page_obj(ctx, doc, number);
+    hd_try(ctx)
+        pageobj = pdf_lookup_page_obj(ctx, doc, number);
+    hd_catch(ctx)
+        hd_rethrow(ctx);
 
     page = pdf_new_page(ctx, doc);
     page->obj = pdf_keep_obj(ctx, pageobj);

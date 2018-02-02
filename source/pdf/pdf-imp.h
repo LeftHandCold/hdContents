@@ -7,4 +7,6 @@
 
 #include "pdf.h"
 
+void pdf_forget_xref(hd_context *ctx, pdf_document *doc);
+
 #endif //HDCONTENTS_PDF_IMP_H

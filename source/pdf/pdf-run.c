@@ -44,7 +44,8 @@ void pdf_run_page_contents(hd_context *ctx, pdf_page *page, char* buf)
     hd_try(ctx)
     {
         pdf_run_page_contents_with_usage(ctx, doc, page, "View");
-        memcpy(buf, ctx->contents, ctx->flush_size - 2);
+        if (ctx->flush_size > 1)
+            memcpy(buf, ctx->contents, ctx->flush_size - 2);
     }
     hd_catch(ctx)
     {

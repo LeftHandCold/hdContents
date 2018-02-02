@@ -68,9 +68,13 @@ pdf_obj *pdf_load_object(hd_context *ctx, pdf_document *doc, int num);
 void pdf_xref_ensure_incremental_object(hd_context *ctx, pdf_document *doc, int num);
 
 pdf_obj *pdf_trailer(hd_context *ctx, pdf_document *doc);
+void pdf_set_populating_xref_trailer(hd_context *ctx, pdf_document *doc, pdf_obj *trailer);
 int pdf_xref_len(hd_context *ctx, pdf_document *doc);
+pdf_xref_entry *pdf_get_populating_xref_entry(hd_context *ctx, pdf_document *doc, int i);
 pdf_xref_entry *pdf_get_xref_entry(hd_context *ctx, pdf_document *doc, int i);
 
 void pdf_repair_xref(hd_context *ctx, pdf_document *doc);
+void pdf_repair_obj_stms(hd_context *ctx, pdf_document *doc);
+void pdf_ensure_solid_xref(hd_context *ctx, pdf_document *doc, int num);
 
 #endif //HDCONTENTS_PDF_XREF_H

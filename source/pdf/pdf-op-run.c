@@ -80,31 +80,36 @@ show_string(hd_context *ctx, pdf_run_processor *pr, unsigned char *buf, int len)
 		//TODO:Temporarily think *buf is English char*
 		for (int i = 0; i < len; ++i)
 		{
-			wchar_t *wc = (wchar_t *)&buf[i];
-			switch (*wc)
+			if (ctx->flush_size < 62)
 			{
-				case '/':
-				case '\\':
-				case '*':
-				case '<':
-				case '>':
-				case '|':
-				case '\'':
-				case 0x0D:
-				case 0x20:
-				case '.':
-				case ':':
-					break;
-				default:
-					if (((*wc >= 'a' && *wc <= 'z')
-						 || (*wc >= 'A' && *wc <= 'Z')
-						 || (*wc >= '0' && *wc <= '9')))
-					{
-						memcpy(ctx->contents + ctx->flush_size, (wchar_t *)&buf[i], 2);
-						ctx->flush_size += 2;
-					}
-					break;
-			}
+				wchar_t *wc = (wchar_t *)&buf[i];
+				switch (*wc)
+				{
+					case '/':
+					case '\\':
+					case '*':
+					case '<':
+					case '>':
+					case '|':
+					case '\'':
+					case 0x0D:
+					case 0x20:
+					case '.':
+					case ':':
+						break;
+					default:
+						if (((*wc >= 'a' && *wc <= 'z')
+							 || (*wc >= 'A' && *wc <= 'Z')
+							 || (*wc >= '0' && *wc <= '9')))
+						{
+							memcpy(ctx->contents + ctx->flush_size, (wchar_t *)&buf[i], 2);
+							ctx->flush_size += 2;
+						}
+						break;
+				}
+			} else
+				return;
+
 		}
 
         return;

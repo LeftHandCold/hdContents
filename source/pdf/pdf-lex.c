@@ -570,3 +570,66 @@ pdf_lex(hd_context *ctx, hd_stream *f, pdf_lexbuf *buf)
 		}
 	}
 }
+
+pdf_token
+pdf_lex_no_string(hd_context *ctx, hd_stream *f, pdf_lexbuf *buf)
+{
+	while (1)
+	{
+		int c = hd_read_byte(ctx, f);
+		switch (c)
+		{
+			case EOF:
+				return PDF_TOK_EOF;
+			case IS_WHITE:
+				lex_white(ctx, f);
+				break;
+			case '%':
+				lex_comment(ctx, f);
+				break;
+			case '/':
+				lex_name(ctx, f, buf);
+				return PDF_TOK_NAME;
+			case '(':
+				continue;
+			case ')':
+				continue;
+			case '<':
+				c = hd_read_byte(ctx, f);
+				if (c == '<')
+				{
+					return PDF_TOK_OPEN_DICT;
+				}
+				else
+				{
+					continue;
+				}
+			case '>':
+				c = hd_read_byte(ctx, f);
+				if (c == '>')
+				{
+					return PDF_TOK_CLOSE_DICT;
+				}
+				if (c == EOF)
+				{
+					return PDF_TOK_EOF;
+				}
+				hd_unread_byte(ctx, f);
+				continue;
+			case '[':
+				return PDF_TOK_OPEN_ARRAY;
+			case ']':
+				return PDF_TOK_CLOSE_ARRAY;
+			case '{':
+				return PDF_TOK_OPEN_BRACE;
+			case '}':
+				return PDF_TOK_CLOSE_BRACE;
+			case IS_NUMBER:
+				return lex_number(ctx, f, buf, c);
+			default: /* isregular: !isdelim && !iswhite && c != EOF */
+				hd_unread_byte(ctx, f);
+				lex_name(ctx, f, buf);
+				return pdf_token_from_keyword(buf->scratch);
+		}
+	}
+}

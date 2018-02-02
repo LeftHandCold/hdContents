@@ -56,6 +56,18 @@ static void pdf_drop_xref_sections_imp(hd_context *ctx, pdf_document *doc, pdf_x
     hd_free(ctx, xref_sections);
 }
 
+void pdf_set_populating_xref_trailer(hd_context *ctx, pdf_document *doc, pdf_obj *trailer)
+{
+    /* Update the trailer of the xref section being populated */
+    pdf_xref *xref = &doc->xref_sections[doc->num_xref_sections - 1];
+    if (xref->trailer)
+    {
+        pdf_drop_obj(ctx, xref->pre_repair_trailer);
+        xref->pre_repair_trailer = xref->trailer;
+    }
+    xref->trailer = pdf_keep_obj(ctx, trailer);
+}
+
 int pdf_xref_len(hd_context *ctx, pdf_document *doc)
 {
     return doc->max_xref_len;
@@ -153,6 +165,40 @@ ensure_solid_xref(hd_context *ctx, pdf_document *doc, int num, int which)
 		extend_xref_index(ctx, doc, num);
 }
 
+/* Used while reading the individual xref sections from a file */
+pdf_xref_entry *pdf_get_populating_xref_entry(hd_context *ctx, pdf_document *doc, int num)
+{
+    /* Return an entry within the xref currently being populated */
+    pdf_xref *xref;
+    pdf_xref_subsec *sub;
+
+    if (doc->num_xref_sections == 0)
+    {
+        doc->xref_sections = hd_malloc_struct(ctx, pdf_xref);
+        doc->num_xref_sections = 1;
+    }
+
+    /* Prevent accidental heap underflow */
+    if (num < 0)
+        hd_throw(ctx, HD_ERROR_GENERIC, "object number must not be negative (%d)", num);
+
+    /* Return the pointer to the entry in the last section. */
+    xref = &doc->xref_sections[doc->num_xref_sections-1];
+
+    for (sub = xref->subsec; sub != NULL; sub = sub->next)
+    {
+        if (num >= sub->start && num < sub->start + sub->len)
+            return &sub->table[num-sub->start];
+    }
+
+    /* We've been asked for an object that's not in a subsec. */
+    ensure_solid_xref(ctx, doc, num+1, doc->num_xref_sections-1);
+    xref = &doc->xref_sections[doc->num_xref_sections-1];
+    sub = xref->subsec;
+
+    return &sub->table[num-sub->start];
+}
+
 /* Used after loading a document to access entries */
 /* This will never throw anything, or return NULL if it is
  * only asked to return objects in range within a 'solid'
@@ -242,18 +288,6 @@ pdf_obj *pdf_trailer(hd_context *ctx, pdf_document *doc)
 	pdf_xref *xref = &doc->xref_sections[0];
 
 	return xref ? xref->trailer : NULL;
-}
-
-void pdf_set_populating_xref_trailer(hd_context *ctx, pdf_document *doc, pdf_obj *trailer)
-{
-	/* Update the trailer of the xref section being populated */
-	pdf_xref *xref = &doc->xref_sections[doc->num_xref_sections - 1];
-	if (xref->trailer)
-	{
-		pdf_drop_obj(ctx, xref->pre_repair_trailer);
-		xref->pre_repair_trailer = xref->trailer;
-	}
-	xref->trailer = pdf_keep_obj(ctx, trailer);
 }
 
 static void
@@ -600,6 +634,43 @@ pdf_read_new_xref(hd_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
     return trailer;
 }
 
+/* Ensure that the current populating xref has a single subsection
+ * that covers the entire range. */
+void pdf_ensure_solid_xref(hd_context *ctx, pdf_document *doc, int num)
+{
+    if (doc->num_xref_sections == 0)
+        pdf_populate_next_xref_level(ctx, doc);
+
+    ensure_solid_xref(ctx, doc, num, doc->num_xref_sections-1);
+}
+
+void pdf_forget_xref(hd_context *ctx, pdf_document *doc)
+{
+    pdf_obj *trailer = pdf_keep_obj(ctx, pdf_trailer(ctx, doc));
+
+    if (doc->saved_xref_sections)
+        pdf_drop_xref_sections_imp(ctx, doc, doc->saved_xref_sections, doc->saved_num_xref_sections);
+
+    doc->saved_xref_sections = doc->xref_sections;
+    doc->saved_num_xref_sections = doc->num_xref_sections;
+
+    doc->startxref = 0;
+    doc->num_xref_sections = 0;
+
+    hd_try(ctx)
+    {
+        pdf_get_populating_xref_entry(ctx, doc, 0);
+    }
+    hd_catch(ctx)
+    {
+        pdf_drop_obj(ctx, trailer);
+        hd_rethrow(ctx);
+    }
+
+    /* Set the trailer of the final xref section. */
+    doc->xref_sections[0].trailer = trailer;
+}
+
 static pdf_obj *
 pdf_read_xref(hd_context *ctx, pdf_document *doc, int64_t ofs, pdf_lexbuf *buf)
 {
@@ -856,59 +927,79 @@ pdf_prime_xref_index(hd_context *ctx, pdf_document *doc)
     }
 }
 
+pdf_obj *
+pdf_load_object(hd_context *ctx, pdf_document *doc, int num)
+{
+    pdf_xref_entry *entry = pdf_cache_object(ctx, doc, num);
+    assert(entry->obj != NULL);
+    return pdf_keep_obj(ctx, entry->obj);
+}
+
+static void
+pdf_load_xref(hd_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
+{
+    int i;
+    int xref_len;
+    pdf_xref_entry *entry;
+
+    pdf_read_start_xref(ctx, doc);
+    pdf_read_xref_sections(ctx, doc, doc->startxref, &doc->lexbuf.base, 1);
+
+    if (pdf_xref_len(ctx, doc) == 0)
+        hd_throw(ctx, HD_ERROR_GENERIC, "found xref was empty");
+
+    pdf_prime_xref_index(ctx, doc);
+
+    entry = pdf_get_xref_entry(ctx, doc, 0);
+    /* broken pdfs where first object is missing */
+    if (!entry->type)
+    {
+        entry->type = 'f';
+        entry->gen = 65535;
+        entry->num = 0;
+    }
+        /* broken pdfs where first object is not free */
+    else if (entry->type != 'f')
+        hd_warn(ctx, "first object in xref is not free");
+
+    /* broken pdfs where object offsets are out of range */
+    xref_len = pdf_xref_len(ctx, doc);
+    for (i = 0; i < xref_len; i++)
+    {
+        entry = pdf_get_xref_entry(ctx, doc, i);
+        if (entry->type == 'n')
+        {
+            /* Special case code: "0000000000 * n" means free,
+             * according to some producers (inc Quartz) */
+            if (entry->ofs == 0)
+                entry->type = 'f';
+            else if (entry->ofs <= 0 || entry->ofs >= doc->file_size)
+                hd_throw(ctx, HD_ERROR_GENERIC, "object offset out of range: %d (%d 0 R)", (int)entry->ofs, i);
+        }
+        if (entry->type == 'o')
+        {
+            /* Read this into a local variable here, because pdf_get_xref_entry
+             * may solidify the xref, hence invalidating "entry", meaning we
+             * need a stashed value for the throw. */
+            hd_off_t ofs = entry->ofs;
+            if (ofs <= 0 || ofs >= xref_len || pdf_get_xref_entry(ctx, doc, ofs)->type != 'n')
+                hd_throw(ctx, HD_ERROR_GENERIC, "invalid reference to an objstm that does not exist: %d (%d 0 R)", (int)ofs, i);
+        }
+    }
+}
+
 static void
 pdf_init_document(hd_context *ctx, pdf_document *doc)
 {
 	int repaired = 0;
     int i;
-    int xref_len;
-    pdf_xref_entry *entry;
+
+    pdf_obj *dict = NULL;
+    hd_var(dict);
+
     hd_try(ctx)
     {
-        pdf_read_start_xref(ctx, doc);
-        pdf_read_xref_sections(ctx, doc, doc->startxref, &doc->lexbuf.base, 1);
-
-        if (pdf_xref_len(ctx, doc) == 0)
-            hd_throw(ctx, HD_ERROR_GENERIC, "found xref was empty");
-
-        pdf_prime_xref_index(ctx, doc);
-
-        entry = pdf_get_xref_entry(ctx, doc, 0);
-        /* broken pdfs where first object is missing */
-        if (!entry->type)
-        {
-            entry->type = 'f';
-            entry->gen = 65535;
-            entry->num = 0;
-        }
-            /* broken pdfs where first object is not free */
-        else if (entry->type != 'f')
-            hd_warn(ctx, "first object in xref is not free");
-
-        /* broken pdfs where object offsets are out of range */
-        xref_len = pdf_xref_len(ctx, doc);
-        for (i = 0; i < xref_len; i++)
-        {
-            entry = pdf_get_xref_entry(ctx, doc, i);
-            if (entry->type == 'n')
-            {
-                /* Special case code: "0000000000 * n" means free,
-                 * according to some producers (inc Quartz) */
-                if (entry->ofs == 0)
-                    entry->type = 'f';
-                else if (entry->ofs <= 0 || entry->ofs >= doc->file_size)
-                    hd_throw(ctx, HD_ERROR_GENERIC, "object offset out of range: %d (%d 0 R)", (int)entry->ofs, i);
-            }
-            if (entry->type == 'o')
-            {
-                /* Read this into a local variable here, because pdf_get_xref_entry
-                 * may solidify the xref, hence invalidating "entry", meaning we
-                 * need a stashed value for the throw. */
-                hd_off_t ofs = entry->ofs;
-                if (ofs <= 0 || ofs >= xref_len || pdf_get_xref_entry(ctx, doc, ofs)->type != 'n')
-                    hd_throw(ctx, HD_ERROR_GENERIC, "invalid reference to an objstm that does not exist: %d (%d 0 R)", (int)ofs, i);
-            }
-        }
+        pdf_load_xref(ctx, doc, &doc->lexbuf.base);
     }
     hd_catch(ctx)
     {
@@ -921,15 +1012,71 @@ pdf_init_document(hd_context *ctx, pdf_document *doc)
 	{
 		if (repaired)
 		{
+            pdf_obj *obj;
+            pdf_obj *nobj = NULL;
+            hd_var(nobj);
 			/*TODO:Some files are not at the bottom of the xref*/
 			/* pdf_repair_xref may access xref_index, so reset it properly */
 			memset(doc->xref_index, 0, sizeof(int) * doc->max_xref_len);
 			pdf_repair_xref(ctx, doc);
+            pdf_prime_xref_index(ctx, doc);
+
+
+            int hasroot, hasinfo;
+
+            int xref_len = pdf_xref_len(ctx, doc);
+            pdf_repair_obj_stms(ctx, doc);
+
+            hasroot = (pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root) != NULL);
+            hasinfo = (pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Info) != NULL);
+
+            for (i = 1; i < xref_len; i++)
+            {
+                pdf_xref_entry *entry = pdf_get_xref_entry(ctx, doc, i);
+                if (entry->type == 0 || entry->type == 'f')
+                    continue;
+
+                hd_try(ctx)
+                {
+                    dict = pdf_load_object(ctx, doc, i);
+                }
+                hd_catch(ctx)
+                {
+                    hd_rethrow_if(ctx, HD_ERROR_TRYLATER);
+                    hd_warn(ctx, "ignoring broken object (%d 0 R)", i);
+                    continue;
+                }
+
+                if (!hasroot)
+                {
+
+                    obj = pdf_dict_get(ctx, dict, PDF_NAME_Type);
+                    if (pdf_name_eq(ctx, obj, PDF_NAME_Catalog))
+                    {
+                        nobj = pdf_new_indirect(ctx, doc, i, 0);
+                        pdf_dict_put_drop(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root, nobj);
+                    }
+                }
+
+                if (!hasinfo)
+                {
+                    if (pdf_dict_get(ctx, dict, PDF_NAME_Creator) || pdf_dict_get(ctx, dict, PDF_NAME_Producer))
+                    {
+                        nobj = pdf_new_indirect(ctx, doc, i, 0);
+                        pdf_dict_put_drop(ctx, pdf_trailer(ctx, doc), PDF_NAME_Info, nobj);
+                    }
+                }
+
+                pdf_drop_obj(ctx, dict);
+                dict = NULL;
+            }
+
 		}
 	}
 	hd_catch(ctx)
 	{
-
+        pdf_drop_obj(ctx, dict);
+        hd_rethrow(ctx);
 	}
 }
 
@@ -947,25 +1094,17 @@ pdf_open_document(hd_context *ctx, const char *filename)
         file = hd_open_file(ctx, filename);
         doc = pdf_new_document(ctx, file);
         pdf_init_document(ctx, doc);
-        printf("doc len is %d\n", doc->startxref);
     }
     hd_always(ctx)
     {
-        if (!doc->file)
-        {
-            printf("!doc->file 1\n");
-        }
         hd_drop_stream(ctx, file);
-        if (!doc->file)
-        {
-            printf("!doc->file 2\n");
-        }
     }
     hd_catch(ctx)
     {
         hd_drop_stream(ctx, file);
         hd_drop_document(ctx, &doc->super);
         hd_rethrow(ctx);
+        return NULL;
     }
     return doc;
 }
