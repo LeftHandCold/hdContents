@@ -45,7 +45,7 @@ static int is_white(int c)
 }
 
 int
-pdf_repair_obj(hd_context *ctx, pdf_document *doc, pdf_lexbuf *buf, int64_t *stmofsp, int *stmlenp, pdf_obj **encrypt, pdf_obj **id, pdf_obj **page, int64_t *tmpofs, pdf_obj **root)
+pdf_repair_obj(hd_context *ctx, pdf_document *doc, pdf_lexbuf *buf, int64_t *stmofsp, int *stmlenp, pdf_obj **id, pdf_obj **page, int64_t *tmpofs, pdf_obj **root)
 {
     hd_stream *file = doc->file;
     pdf_token tok;
@@ -87,21 +87,11 @@ pdf_repair_obj(hd_context *ctx, pdf_document *doc, pdf_lexbuf *buf, int64_t *stm
          * we get back from looking up in it, we need to check they
          * aren't indirected. */
 
-        if (encrypt || id || root)
+        if (id || root)
         {
             obj = pdf_dict_get(ctx, dict, PDF_NAME_Type);
             if (!pdf_is_indirect(ctx, obj) && pdf_name_eq(ctx, obj, PDF_NAME_XRef))
             {
-                if (encrypt)
-                {
-                    obj = pdf_dict_get(ctx, dict, PDF_NAME_Encrypt);
-                    if (obj)
-                    {
-                        pdf_drop_obj(ctx, *encrypt);
-                        *encrypt = pdf_keep_obj(ctx, obj);
-                    }
-                }
-
                 if (id)
                 {
                     obj = pdf_dict_get(ctx, dict, PDF_NAME_ID);
@@ -203,9 +193,7 @@ void
 pdf_repair_xref(hd_context *ctx, pdf_document *doc)
 {
     pdf_obj *dict, *obj = NULL;
-    pdf_obj *length;
 
-    pdf_obj *encrypt = NULL;
     pdf_obj *id = NULL;
     pdf_obj **roots = NULL;
     pdf_obj *info = NULL;
@@ -228,7 +216,6 @@ pdf_repair_xref(hd_context *ctx, pdf_document *doc)
     int num_roots = 0;
     int max_roots = 0;
 
-    hd_var(encrypt);
     hd_var(id);
     hd_var(roots);
     hd_var(num_roots);
@@ -318,7 +305,7 @@ pdf_repair_xref(hd_context *ctx, pdf_document *doc)
                 {
                     stm_len = 0;
                     stm_ofs = 0;
-                    tok = pdf_repair_obj(ctx, doc, buf, &stm_ofs, &stm_len, &encrypt, &id, NULL, &tmpofs, &root);
+                    tok = pdf_repair_obj(ctx, doc, buf, &stm_ofs, &stm_len, &id, NULL, &tmpofs, &root);
                     if (root)
                         add_root(ctx, root, &roots, &num_roots, &max_roots);
                 }
@@ -386,15 +373,9 @@ pdf_repair_xref(hd_context *ctx, pdf_document *doc)
 
                 hd_try(ctx)
                 {
-                    obj = pdf_dict_get(ctx, dict, PDF_NAME_Encrypt);
-                    if (obj)
-                    {
-                        pdf_drop_obj(ctx, encrypt);
-                        encrypt = pdf_keep_obj(ctx, obj);
-                    }
 
                     obj = pdf_dict_get(ctx, dict, PDF_NAME_ID);
-                    if (obj && (!id || !encrypt || pdf_dict_get(ctx, dict, PDF_NAME_Encrypt)))
+                    if (obj && (!id))
                     {
                         pdf_drop_obj(ctx, id);
                         id = pdf_keep_obj(ctx, obj);
@@ -520,21 +501,6 @@ pdf_repair_xref(hd_context *ctx, pdf_document *doc)
             info = NULL;
         }
 
-        if (encrypt)
-        {
-            if (pdf_is_indirect(ctx, encrypt))
-            {
-                /* create new reference with non-NULL xref pointer */
-                obj = pdf_new_indirect(ctx, doc, pdf_to_num(ctx, encrypt), pdf_to_gen(ctx, encrypt));
-                pdf_drop_obj(ctx, encrypt);
-                encrypt = obj;
-                obj = NULL;
-            }
-            pdf_dict_put(ctx, pdf_trailer(ctx, doc), PDF_NAME_Encrypt, encrypt);
-            pdf_drop_obj(ctx, encrypt);
-            encrypt = NULL;
-        }
-
         if (id)
         {
             if (pdf_is_indirect(ctx, id))
@@ -560,7 +526,6 @@ pdf_repair_xref(hd_context *ctx, pdf_document *doc)
     }
     hd_catch(ctx)
     {
-        pdf_drop_obj(ctx, encrypt);
         pdf_drop_obj(ctx, id);
         pdf_drop_obj(ctx, obj);
         pdf_drop_obj(ctx, info);
