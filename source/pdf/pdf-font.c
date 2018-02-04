@@ -177,6 +177,8 @@ pdf_font_desc *
 pdf_load_font(hd_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *dict, int nested_depth)
 {
     pdf_obj *subtype;
+    pdf_obj *dfonts;
+    pdf_obj *charprocs;
     pdf_font_desc *fontdesc = NULL;
 
     if ((fontdesc = pdf_find_item(ctx, pdf_drop_font_imp, dict)) != NULL)
@@ -185,16 +187,40 @@ pdf_load_font(hd_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *dict, i
     }
 
     subtype = pdf_dict_get(ctx, dict, PDF_NAME_Subtype);
+    dfonts = pdf_dict_get(ctx, dict, PDF_NAME_DescendantFonts);
+    charprocs = pdf_dict_get(ctx, dict, PDF_NAME_CharProcs);
 
     hd_var(fontdesc);
 
     hd_try(ctx)
     {
+        //TODO:pdf_load_simple_font;
+        //TODO:pdf_load_type3_font;
         if (pdf_name_eq(ctx, subtype, PDF_NAME_Type0))
             fontdesc = pdf_load_type0_font(ctx, doc, dict);
+        else if (pdf_name_eq(ctx, subtype, PDF_NAME_Type1))
+            fontdesc = NULL;
+        else if (pdf_name_eq(ctx, subtype, PDF_NAME_MMType1))
+            fontdesc = NULL;
         else if (pdf_name_eq(ctx, subtype, PDF_NAME_TrueType))
+            fontdesc = NULL;
+        else if (pdf_name_eq(ctx, subtype, PDF_NAME_Type3))
         {
-            //TODO:pdf_load_simple_font;
+            fontdesc = NULL;
+        }
+        else if (charprocs)
+        {
+            hd_warn(ctx, "unknown font format, guessing type3.");
+            fontdesc = NULL;
+        }
+        else if (dfonts)
+        {
+            hd_warn(ctx, "unknown font format, guessing type0.");
+            fontdesc = NULL;
+        }
+        else
+        {
+            hd_warn(ctx, "unknown font format, guessing type1 or truetype.");
             fontdesc = NULL;
         }
 
