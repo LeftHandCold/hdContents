@@ -26,13 +26,6 @@ pdf_new_cmap(hd_context *ctx)
 }
 
 /* Could be a macro for speed */
-pdf_cmap *
-pdf_keep_cmap(hd_context *ctx, pdf_cmap *cmap)
-{
-    return hd_keep_storable(ctx, &cmap->storable);
-}
-
-/* Could be a macro for speed */
 void
 pdf_drop_cmap(hd_context *ctx, pdf_cmap *cmap)
 {

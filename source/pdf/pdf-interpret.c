@@ -56,8 +56,6 @@ load_font_or_hail_mary(hd_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj
             hd_rethrow(ctx);
         }
     }
-    /*if (desc == NULL)
-        desc = pdf_load_hail_mary_font(ctx, doc);*/
     return desc;
 }
 

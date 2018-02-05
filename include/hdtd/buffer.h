@@ -28,14 +28,6 @@ hd_buffer *hd_keep_buffer(hd_context *ctx, hd_buffer *buf);
 */
 void hd_drop_buffer(hd_context *ctx, hd_buffer *buf);
 
-/*
-	hd_new_buffer: Create a new buffer.
-
-	capacity: Initial capacity.
-
-	Returns pointer to new buffer.
-*/
-hd_buffer *hd_new_buffer(hd_context *ctx, size_t capacity);
 
 /*
 	hd_resize_buffer: Ensure that a buffer has a given capacity,
@@ -46,10 +38,5 @@ hd_buffer *hd_new_buffer(hd_context *ctx, size_t capacity);
 */
 void hd_resize_buffer(hd_context *ctx, hd_buffer *buf, size_t capacity);
 
-/*
-	hd_grow_buffer: Make some space within a buffer (i.e. ensure that
-	capacity > size).
-*/
-void hd_grow_buffer(hd_context *ctx, hd_buffer *buf);
 
 #endif //HDCONTENTS_HDTD_BUFFER_H

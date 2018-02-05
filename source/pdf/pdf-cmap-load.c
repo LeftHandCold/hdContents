@@ -83,13 +83,3 @@ pdf_new_identity_cmap(hd_context *ctx, int wmode, int bytes)
     }
     return cmap;
 }
-
-/*
- * Load predefined CMap from system.
- */
-pdf_cmap *
-pdf_load_system_cmap(hd_context *ctx, const char *cmap_name)
-{
-    pdf_cmap *cmap;
-    return cmap;
-}

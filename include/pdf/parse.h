@@ -33,7 +33,6 @@ pdf_token pdf_lex_no_string(hd_context *ctx, hd_stream *f, pdf_lexbuf *lexbuf);
 
 pdf_obj *pdf_parse_array(hd_context *ctx, pdf_document *doc, hd_stream *f, pdf_lexbuf *buf);
 pdf_obj *pdf_parse_dict(hd_context *ctx, pdf_document *doc, hd_stream *f, pdf_lexbuf *buf);
-pdf_obj *pdf_parse_stm_obj(hd_context *ctx, pdf_document *doc, hd_stream *f, pdf_lexbuf *buf);
 pdf_obj *pdf_parse_indirect_obj(hd_context *ctx, pdf_document *doc, hd_stream *f, pdf_lexbuf *buf, int *num, int *gen, hd_off_t *stm_ofs);
 
 #endif //HDCONTENTS_PDF_PARSE_H

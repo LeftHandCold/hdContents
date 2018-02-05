@@ -8,12 +8,6 @@
  * Create and destroy
  */
 
-pdf_font_desc *
-pdf_keep_font(hd_context *ctx, pdf_font_desc *fontdesc)
-{
-    return hd_keep_storable(ctx, &fontdesc->storable);
-}
-
 void
 pdf_drop_font(hd_context *ctx, pdf_font_desc *fontdesc)
 {
@@ -25,11 +19,13 @@ pdf_drop_font_imp(hd_context *ctx, hd_storable *fontdesc_)
 {
     pdf_font_desc *fontdesc = (pdf_font_desc *)fontdesc_;
 
-    pdf_drop_cmap(ctx, fontdesc->encoding);
-    //pdf_drop_cmap(ctx, fontdesc->to_ttf_cmap);
-    pdf_drop_cmap(ctx, fontdesc->to_unicode);
-    //hd_free(ctx, fontdesc->cid_to_gid);
-    //hd_free(ctx, fontdesc->cid_to_ucs);
+
+	if (fontdesc->encoding != NULL)
+    	pdf_drop_cmap(ctx, fontdesc->encoding);
+	if (fontdesc->to_unicode != NULL)
+    	pdf_drop_cmap(ctx, fontdesc->to_unicode);
+	if (fontdesc->cid_to_ucs != NULL)
+    	hd_free(ctx, fontdesc->cid_to_ucs);
     hd_free(ctx, fontdesc);
 }
 
@@ -44,15 +40,10 @@ pdf_new_font_desc(hd_context *ctx)
     fontdesc->flags = 0;
 
     fontdesc->encoding = NULL;
-    fontdesc->to_ttf_cmap = NULL;
-    fontdesc->cid_to_gid_len = 0;
-    fontdesc->cid_to_gid = NULL;
 
     fontdesc->to_unicode = NULL;
     fontdesc->cid_to_ucs_len = 0;
     fontdesc->cid_to_ucs = NULL;
-
-    fontdesc->wmode = 0;
 
     fontdesc->is_embedded = 0;
 
@@ -221,8 +212,6 @@ pdf_load_simple_font_by_name(hd_context *ctx, pdf_document *doc, pdf_obj *dict, 
 
         fontdesc->encoding = pdf_new_identity_cmap(ctx, 0, 1);
         fontdesc->size += pdf_cmap_size(ctx, fontdesc->encoding);
-        fontdesc->cid_to_gid_len = 256;
-        fontdesc->cid_to_gid = NULL;
 
         hd_try(ctx)
         {

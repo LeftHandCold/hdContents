@@ -65,14 +65,12 @@ struct pdf_cmap_s
 };
 
 pdf_cmap *pdf_new_cmap(hd_context *ctx);
-pdf_cmap *pdf_keep_cmap(hd_context *ctx, pdf_cmap *cmap);
 void pdf_drop_cmap(hd_context *ctx, pdf_cmap *cmap);
 void pdf_drop_cmap_imp(hd_context *ctx,  hd_storable *cmap);
 size_t pdf_cmap_size(hd_context *ctx, pdf_cmap *cmap);
 
 int pdf_cmap_wmode(hd_context *ctx, pdf_cmap *cmap);
 void pdf_set_cmap_wmode(hd_context *ctx, pdf_cmap *cmap, int wmode);
-void pdf_set_usecmap(hd_context *ctx, pdf_cmap *cmap, pdf_cmap *usecmap);
 
 void pdf_add_codespace(hd_context *ctx, pdf_cmap *cmap, unsigned int low, unsigned int high, int n);
 void pdf_map_range_to_range(hd_context *ctx, pdf_cmap *cmap, unsigned int srclo, unsigned int srchi, int dstlo);
@@ -85,8 +83,6 @@ int pdf_decode_cmap(pdf_cmap *cmap, unsigned char *s, unsigned char *e, unsigned
 
 pdf_cmap *pdf_new_identity_cmap(hd_context *ctx, int wmode, int bytes);
 pdf_cmap *pdf_load_cmap(hd_context *ctx, hd_stream *file);
-pdf_cmap *pdf_load_system_cmap(hd_context *ctx, const char *name);
-pdf_cmap *pdf_load_builtin_cmap(hd_context *ctx, const char *name);
 pdf_cmap *pdf_load_embedded_cmap(hd_context *ctx, pdf_document *doc, pdf_obj *ref);
 
 #endif //HDCONTENTS_PDF_CMAP_H

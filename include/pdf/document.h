@@ -60,10 +60,6 @@ typedef struct pdf_unsaved_sig_s pdf_unsaved_sig;
 struct pdf_unsaved_sig_s
 {
     pdf_obj *field;
-    int byte_range_start;
-    int byte_range_end;
-    int contents_start;
-    int contents_end;
     pdf_unsaved_sig *next;
 };
 
@@ -73,7 +69,6 @@ struct pdf_document_s
 
     hd_stream *file;
 
-    int version;
     hd_off_t startxref;
     hd_off_t file_size;
 

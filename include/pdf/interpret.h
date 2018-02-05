@@ -28,10 +28,6 @@ struct pdf_processor_s
 
     /* END is used to signify end of stream (finalise and close down) */
     void (*op_END)(hd_context *ctx, pdf_processor *proc);
-
-    /* interpreter state that persists across content streams */
-    const char *usage;
-    int hidden;
 };
 
 struct pdf_csi_s
@@ -58,16 +54,8 @@ struct pdf_csi_s
 /*
 	pdf_new_run_processor: Create a new "run" processor. This maps
 	from PDF operators to hd_device level calls.
-
-	usage: A NULL terminated string that describes the 'usage' of
-	this interpretation. Typically 'View', though 'Print' is also
-	defined within the PDF reference manual, and others are possible.
-
-	nested: The nested depth of this interpreter. This should be
-	0 for an initial call, and will be incremented in nested calls
-	due to Type 3 fonts.
 */
-pdf_processor *pdf_new_run_processor(hd_context *ctx, const char *usage, int nested);
+pdf_processor *pdf_new_run_processor(hd_context *ctx);
 
 /* Functions to actually process annotations, glyphs and general stream objects */
 void pdf_process_contents(hd_context *ctx, pdf_processor *proc, pdf_document *doc, pdf_obj *obj, pdf_obj *res);

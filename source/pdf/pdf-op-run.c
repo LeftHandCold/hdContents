@@ -176,11 +176,10 @@ pdf_drop_run_processor(hd_context *ctx, pdf_processor *proc)
 }
 
 pdf_processor *
-pdf_new_run_processor(hd_context *ctx, const char *usage, int nested)
+pdf_new_run_processor(hd_context *ctx)
 {
 	pdf_run_processor *proc = pdf_new_processor(ctx, sizeof *proc);
 	{
-		proc->super.usage = usage;
 		proc->super.drop_processor = pdf_drop_run_processor;
 
 		/* text objects */

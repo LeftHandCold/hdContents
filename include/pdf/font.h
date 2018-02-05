@@ -28,9 +28,6 @@ struct pdf_font_desc_s
 
     /* Encoding (CMap) */
     pdf_cmap *encoding;
-    pdf_cmap *to_ttf_cmap;
-    size_t cid_to_gid_len;
-    unsigned short *cid_to_gid;
 
     /* ToUnicode */
     pdf_cmap *to_unicode;
@@ -43,18 +40,13 @@ struct pdf_font_desc_s
     int is_embedded;
 };
 
-void pdf_set_font_wmode(hd_context *ctx, pdf_font_desc *font, int wmode);
 
 void pdf_load_to_unicode(hd_context *ctx, pdf_document *doc, pdf_font_desc *font, const char **strings, char *collection, pdf_obj *cmapstm);
 
-int pdf_font_cid_to_gid(hd_context *ctx, pdf_font_desc *fontdesc, int cid);
-
 pdf_font_desc *pdf_load_type3_font(hd_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *obj);
 pdf_font_desc *pdf_load_font(hd_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *obj, int nested_depth);
-pdf_font_desc *pdf_load_hail_mary_font(hd_context *ctx, pdf_document *doc);
 
 pdf_font_desc *pdf_new_font_desc(hd_context *ctx);
-pdf_font_desc *pdf_keep_font(hd_context *ctx, pdf_font_desc *fontdesc);
 void pdf_drop_font(hd_context *ctx, pdf_font_desc *font);
 
 #endif //HDCONTENTS_PDF_FONT_H

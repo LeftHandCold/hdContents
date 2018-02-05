@@ -12,7 +12,7 @@ pdf_page_contents(hd_context *ctx, pdf_page *page)
 }
 
 static void
-pdf_run_page_contents_with_usage(hd_context *ctx, pdf_document *doc, pdf_page *page, const char *usage)
+pdf_run_page_contents_with_usage(hd_context *ctx, pdf_document *doc, pdf_page *page)
 {
     pdf_obj *resources;
     pdf_obj *contents;
@@ -25,7 +25,7 @@ pdf_run_page_contents_with_usage(hd_context *ctx, pdf_document *doc, pdf_page *p
         resources = pdf_page_resources(ctx, page);
         contents = pdf_page_contents(ctx, page);
 
-        proc = pdf_new_run_processor(ctx, usage, 0);
+        proc = pdf_new_run_processor(ctx);
         pdf_process_contents(ctx, proc, doc, resources, contents);
         pdf_close_processor(ctx, proc);
     }
@@ -43,7 +43,7 @@ void pdf_run_page_contents(hd_context *ctx, pdf_page *page, char* buf)
 
     hd_try(ctx)
     {
-        pdf_run_page_contents_with_usage(ctx, doc, page, "View");
+        pdf_run_page_contents_with_usage(ctx, doc, page);
         if (ctx->flush_size > 1)
             memcpy(buf, ctx->contents, ctx->flush_size);
     }

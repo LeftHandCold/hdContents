@@ -90,7 +90,6 @@ pdf_obj *pdf_new_int_offset(hd_context *ctx, pdf_document *doc, hd_off_t off);
 pdf_obj *pdf_new_real(hd_context *ctx, pdf_document *doc, float f);
 pdf_obj *pdf_new_name(hd_context *ctx, pdf_document *doc, const char *str);
 pdf_obj *pdf_new_string(hd_context *ctx, pdf_document *doc, const char *str, size_t len);
-pdf_obj *pdf_new_text_string(hd_context *ctx, pdf_document *doc, const char *s);
 pdf_obj *pdf_new_indirect(hd_context *ctx, pdf_document *doc, int num, int gen);
 pdf_obj *pdf_new_array(hd_context *ctx, pdf_document *doc, int initialcap);
 pdf_obj *pdf_new_dict(hd_context *ctx, pdf_document *doc, int initialcap);
@@ -110,34 +109,22 @@ int pdf_to_gen(hd_context *ctx, pdf_obj *obj);
 int pdf_array_len(hd_context *ctx, pdf_obj *array);
 pdf_obj *pdf_array_get(hd_context *ctx, pdf_obj *array, int i);
 void pdf_array_put(hd_context *ctx, pdf_obj *array, int i, pdf_obj *obj);
-void pdf_array_put_drop(hd_context *ctx, pdf_obj *array, int i, pdf_obj *obj);
 void pdf_array_push(hd_context *ctx, pdf_obj *array, pdf_obj *obj);
 void pdf_array_push_drop(hd_context *ctx, pdf_obj *array, pdf_obj *obj);
 void pdf_array_insert(hd_context *ctx, pdf_obj *array, pdf_obj *obj, int index);
-void pdf_array_insert_drop(hd_context *ctx, pdf_obj *array, pdf_obj *obj, int index);
 void pdf_array_delete(hd_context *ctx, pdf_obj *array, int index);
-int pdf_array_find(hd_context *ctx, pdf_obj *array, pdf_obj *obj);
-int pdf_array_contains(hd_context *ctx, pdf_obj *array, pdf_obj *obj);
 
 int pdf_dict_len(hd_context *ctx, pdf_obj *dict);
 pdf_obj *pdf_dict_get_key(hd_context *ctx, pdf_obj *dict, int idx);
 pdf_obj *pdf_dict_get_val(hd_context *ctx, pdf_obj *dict, int idx);
 pdf_obj *pdf_dict_get(hd_context *ctx, pdf_obj *dict, pdf_obj *key);
 pdf_obj *pdf_dict_getp(hd_context *ctx, pdf_obj *dict, const char *path);
-pdf_obj *pdf_dict_getl(hd_context *ctx, pdf_obj *dict, ...);
 pdf_obj *pdf_dict_geta(hd_context *ctx, pdf_obj *dict, pdf_obj *key, pdf_obj *abbrev);
 pdf_obj *pdf_dict_gets(hd_context *ctx, pdf_obj *dict, const char *key);
-pdf_obj *pdf_dict_getsa(hd_context *ctx, pdf_obj *dict, const char *key, const char *abbrev);
 void pdf_dict_put(hd_context *ctx, pdf_obj *dict, pdf_obj *key, pdf_obj *val);
 void pdf_dict_put_drop(hd_context *ctx, pdf_obj *dict, pdf_obj *key, pdf_obj *val);
-void pdf_dict_get_put_drop(hd_context *ctx, pdf_obj *dict, pdf_obj *key, pdf_obj *val, pdf_obj **old_val);
 void pdf_dict_puts(hd_context *ctx, pdf_obj *dict, const char *key, pdf_obj *val);
-void pdf_dict_puts_drop(hd_context *ctx, pdf_obj *dict, const char *key, pdf_obj *val);
 void pdf_dict_putp(hd_context *ctx, pdf_obj *dict, const char *path, pdf_obj *val);
-void pdf_dict_putp_drop(hd_context *ctx, pdf_obj *dict, const char *path, pdf_obj *val);
-void pdf_dict_putl(hd_context *ctx, pdf_obj *dict, pdf_obj *val, ...);
-void pdf_dict_putl_drop(hd_context *ctx, pdf_obj *dict, pdf_obj *val, ...);
-void pdf_dict_del(hd_context *ctx, pdf_obj *dict, pdf_obj *key);
 void pdf_dict_dels(hd_context *ctx, pdf_obj *dict, const char *key);
 
 int pdf_obj_parent_num(hd_context *ctx, pdf_obj *obj);
@@ -160,7 +147,6 @@ int pdf_is_dict(hd_context *ctx, pdf_obj *obj);
 int pdf_is_indirect(hd_context *ctx, pdf_obj *obj);
 int pdf_obj_num_is_stream(hd_context *ctx, pdf_document *doc, int num);
 int pdf_is_stream(hd_context *ctx, pdf_obj *obj);
-pdf_obj *pdf_resolve_obj(hd_context *ctx, pdf_obj *a);
 int pdf_objcmp(hd_context *ctx, pdf_obj *a, pdf_obj *b);
 int pdf_objcmp_resolve(hd_context *ctx, pdf_obj *a, pdf_obj *b);
 pdf_document *pdf_get_indirect_document(hd_context *ctx, pdf_obj *obj);
@@ -175,7 +161,6 @@ static inline int pdf_name_eq(hd_context *ctx, pdf_obj *a, pdf_obj *b)
 }
 
 /* obj marking and unmarking functions - to avoid infinite recursions. */
-int pdf_obj_marked(hd_context *ctx, pdf_obj *obj);
 int pdf_mark_obj(hd_context *ctx, pdf_obj *obj);
 void pdf_unmark_obj(hd_context *ctx, pdf_obj *obj);
 
