@@ -68,3 +68,100 @@ hd_open_null(hd_context *ctx, hd_stream *chain, int len, hd_off_t offset)
 
     return hd_new_stream(ctx, state, next_null, close_null);
 }
+
+/* Concat filter concatenates several streams into one */
+
+struct concat_filter
+{
+    int max;
+    int count;
+    int current;
+    int pad; /* 1 if we should add whitespace padding between streams */
+    unsigned char ws_buf;
+    hd_stream *chain[1];
+};
+
+static int
+next_concat(hd_context *ctx, hd_stream *stm, size_t max)
+{
+    struct concat_filter *state = (struct concat_filter *)stm->state;
+    size_t n;
+
+    while (state->current < state->count)
+    {
+        /* Read the next block of underlying data. */
+        if (stm->wp == state->chain[state->current]->wp)
+            state->chain[state->current]->rp = stm->wp;
+        n = hd_available(ctx, state->chain[state->current], max);
+        if (n)
+        {
+            stm->rp = state->chain[state->current]->rp;
+            stm->wp = state->chain[state->current]->wp;
+            stm->pos += (int64_t)n;
+            return *stm->rp++;
+        }
+        else
+        {
+            if (state->chain[state->current]->error)
+            {
+                stm->error = 1;
+                break;
+            }
+            state->current++;
+            hd_drop_stream(ctx, state->chain[state->current-1]);
+            if (state->pad)
+            {
+                stm->rp = (&state->ws_buf)+1;
+                stm->wp = stm->rp + 1;
+                stm->pos++;
+                return 32;
+            }
+        }
+    }
+
+    stm->rp = stm->wp;
+
+    return EOF;
+}
+
+static void
+close_concat(hd_context *ctx, void *state_)
+{
+    struct concat_filter *state = (struct concat_filter *)state_;
+    int i;
+
+    for (i = state->current; i < state->count; i++)
+    {
+        hd_drop_stream(ctx, state->chain[i]);
+    }
+    hd_free(ctx, state);
+}
+
+hd_stream *
+hd_open_concat(hd_context *ctx, int len, int pad)
+{
+    struct concat_filter *state;
+
+    state = hd_calloc(ctx, 1, sizeof(struct concat_filter) + (len-1)*sizeof(hd_stream *));
+    state->max = len;
+    state->count = 0;
+    state->current = 0;
+    state->pad = pad;
+    state->ws_buf = 32;
+
+    return hd_new_stream(ctx, state, next_concat, close_concat);
+}
+
+void
+hd_concat_push_drop(hd_context *ctx, hd_stream *concat, hd_stream *chain)
+{
+    struct concat_filter *state = (struct concat_filter *)concat->state;
+
+    if (state->count == state->max)
+    {
+        hd_drop_stream(ctx, chain);
+        hd_throw(ctx, HD_ERROR_GENERIC, "Concat filter size exceeded");
+    }
+
+    state->chain[state->count++] = chain;
+}

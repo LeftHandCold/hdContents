@@ -222,10 +222,41 @@ pdf_open_image_stream(hd_context *ctx, pdf_document *doc, int num, hd_compressio
     return pdf_open_filter(ctx, doc, doc->file, x->obj, num, x->stm_ofs, params);
 }
 
+static hd_stream *
+pdf_open_object_array(hd_context *ctx, pdf_document *doc, pdf_obj *list)
+{
+    hd_stream *stm;
+    int i, n;
+
+    n = pdf_array_len(ctx, list);
+    stm = hd_open_concat(ctx, n, 1);
+
+    for (i = 0; i < n; i++)
+    {
+        pdf_obj *obj = pdf_array_get(ctx, list, i);
+        hd_try(ctx)
+            hd_concat_push_drop(ctx, stm, pdf_open_stream(ctx, obj));
+        hd_catch(ctx)
+        {
+            if (hd_caught(ctx) == HD_ERROR_TRYLATER)
+            {
+                hd_drop_stream(ctx, stm);
+                hd_rethrow(ctx);
+            }
+            hd_warn(ctx, "cannot load content stream part %d/%d", i + 1, n);
+        }
+    }
+
+    return stm;
+}
+
 hd_stream *
 pdf_open_contents_stream(hd_context *ctx, pdf_document *doc, pdf_obj *obj)
 {
     int num;
+
+    if (pdf_is_array(ctx, obj))
+        return pdf_open_object_array(ctx, doc, obj);
 
     num = pdf_to_num(ctx, obj);
     if (pdf_is_stream(ctx, obj))

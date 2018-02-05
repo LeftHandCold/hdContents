@@ -115,6 +115,7 @@ load_cid_font(hd_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
             {
                 //TODO:pdf_load_system_cmap
 				cmap = NULL;
+                hd_throw(ctx, HD_ERROR_GENERIC, "pdf_load_system_cmap is TODO");
             }
         }
         else if (pdf_is_indirect(ctx, encoding))

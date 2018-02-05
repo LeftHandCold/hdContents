@@ -13,6 +13,7 @@
 hd_stream *hd_open_copy(hd_context *ctx, hd_stream *chain);
 hd_stream *hd_open_null(hd_context *ctx, hd_stream *chain, int len, hd_off_t offset);
 hd_stream *hd_open_concat(hd_context *ctx, int max, int pad);
+void hd_concat_push_drop(hd_context *ctx, hd_stream *concat, hd_stream *chain); /* Ownership of chain is passed in */
 
 hd_stream *hd_open_flated(hd_context *ctx, hd_stream *chain, int window_bits);
 hd_stream *hd_open_predict(hd_context *ctx, hd_stream *chain, int predictor, int columns, int colors, int bpc);
