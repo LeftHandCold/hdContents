@@ -37,7 +37,7 @@ pdf_show_char(hd_context *ctx, pdf_run_processor *pr, int cid)
 
 	if ((ctx->flush_size < 62) && cid > 0 && ucslen > 0)
 	{
-		wchar_t *wc = (wchar_t *)&ucsbuf[0];
+		hd_wchar_t *wc = (hd_wchar_t *)&ucsbuf[0];
 		switch (*wc)
 		{
 			case '/':
@@ -57,14 +57,14 @@ pdf_show_char(hd_context *ctx, pdf_run_processor *pr, int cid)
 					 || (*wc >= 'A' && *wc <= 'Z')
 					 || (*wc >= '0' && *wc <= '9')))
 				{
-					memcpy(ctx->contents + ctx->flush_size, (wchar_t *)&ucsbuf[0], 2);
+					memcpy(ctx->contents + ctx->flush_size, (hd_wchar_t *)&ucsbuf[0], 2);
 					ctx->flush_size += 2;
 				}
 				else if (isunicode)
 				{
 					if (*wc >= 0x4e00 && *wc <= 0x9fa5)
 					{
-						memcpy(ctx->contents + ctx->flush_size, (wchar_t *)&ucsbuf[0], 2);
+						memcpy(ctx->contents + ctx->flush_size, (hd_wchar_t *)&ucsbuf[0], 2);
 						ctx->flush_size += 2;
 					}
 				}

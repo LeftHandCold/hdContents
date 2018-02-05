@@ -26,6 +26,8 @@
 #include "memento.h"
 #define nelem(x) (sizeof(x)/sizeof((x)[0]))
 
+typedef unsigned short hd_wchar_t;
+
 #if defined(_MSC_VER) && (_MSC_VER < 1700) /* MSVC older than VS2012 */
 typedef signed char int8_t;
 typedef short int int16_t;

@@ -1,24 +1,6 @@
 #include "hdtd.h"
-#include <ctype.h>
-//============ patch get first char
-static unsigned patch_get_first_char(wchar_t *unicode) {
-    char buf[4];
-    wchar_t wc = unicode[0];
-    //Is it a letter?
-    if ((wc >= 'a' && wc <= 'z') || (wc >= 'A' && wc <= 'Z'))
-        wc = toupper(unicode[0]);
-
-    int size = wctomb(buf, wc);
-    //int size=wctomb(buf,toupper(unicode[0]));
-    if (size > 0) {
-        return (unsigned char)buf[0];
-    }
-    else {
-        return toupper(unicode[0]);
-    }
-}
 //================ patch unicode to utf8 ==================
-static int to_utf8(char *buf, wchar_t c, int buf_size) {
+static int to_utf8(char *buf, hd_wchar_t c, int buf_size) {
     int size = 0;
     //0x0000-0x007f
     if (c < 0x80) {
@@ -73,7 +55,7 @@ static int to_utf8(char *buf, wchar_t c, int buf_size) {
 
     return size;
 }
-static int unicode_to_utf8(char *buf, wchar_t *unicode, int buf_size) {
+static int unicode_to_utf8(char *buf, hd_wchar_t *unicode, int buf_size) {
     char *p = buf;
     int total_size = 0;
     //Used to store'\0'
@@ -115,20 +97,14 @@ int main() {
 
     /* Open the document. */
     hd_try(ctx)
-        doc = hd_open_document(ctx, "F:/pdf/file98.pdf");
+        doc = hd_open_document(ctx, "/Users/sjw/Documents/debugfile/f0711656.pdf");
     hd_catch(ctx) {
         fprintf(stderr, "cannot open document: %s\n", hd_caught_message(ctx));
         hd_drop_context(ctx);
         return EXIT_FAILURE;
     }
-    hd_page *page;
-    hd_try(ctx)
-        page = hd_load_page(ctx, doc, 0);
-    hd_catch(ctx) {
-        fprintf(stderr, "cannot load page: %s\n", hd_caught_message(ctx));
-        hd_drop_context(ctx);
-        return EXIT_FAILURE;
-    }
+
+    hd_page *page = hd_load_page(ctx, doc, 0);
     char buf[512] = {0};
 
     hd_try(ctx)
@@ -136,12 +112,18 @@ int main() {
         hd_run_page_contents(ctx, page, buf);
         unsigned char filenameUtf8[128];
         memset(filenameUtf8, 0, 128);
-        unicode_to_utf8(filenameUtf8, buf, 32);
-        FILE *fp;
+		unsigned int len;
+		len = (ctx->flush_size > 32) ? 32 : ctx->flush_size;
+		if (len > 0)
+		{
+			unicode_to_utf8(filenameUtf8, (hd_wchar_t* )buf, len);
+			FILE *fp;
 
-        fp=fopen("F:/test.txt","a+");
-        fprintf(fp,"%s",filenameUtf8);
-        fclose(fp);
+			fp=fopen("/Users/sjw/Documents/debugfile/test.txt","a+");
+			fprintf(fp,"%s",filenameUtf8);
+			fclose(fp);
+		}
+
     }
     hd_catch(ctx)
     {
@@ -153,5 +135,4 @@ int main() {
     hd_drop_document(ctx, doc);
     hd_drop_context(ctx);
     printf("hd_new_context is end\n");
-    return 0;
 }
