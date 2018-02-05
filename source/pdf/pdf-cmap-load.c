@@ -25,7 +25,6 @@ pdf_load_embedded_cmap(hd_context *ctx, pdf_document *doc, pdf_obj *stmobj)
 {
     hd_stream *file = NULL;
     pdf_cmap *cmap = NULL;
-    pdf_obj *obj;
 
     hd_var(file);
     hd_var(cmap);
