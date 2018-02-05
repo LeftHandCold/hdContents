@@ -81,8 +81,8 @@ int pdf_lookup_cmap(pdf_cmap *cmap, unsigned int cpt);
 int pdf_lookup_cmap_full(pdf_cmap *cmap, unsigned int cpt, int *out);
 int pdf_decode_cmap(pdf_cmap *cmap, unsigned char *s, unsigned char *e, unsigned int *cpt);
 
-pdf_cmap *pdf_new_identity_cmap(hd_context *ctx, int wmode, int bytes);
+pdf_cmap *pdf_new_identity_cmap(hd_context *ctx, int wmode, unsigned int bytes);
 pdf_cmap *pdf_load_cmap(hd_context *ctx, hd_stream *file);
-pdf_cmap *pdf_load_embedded_cmap(hd_context *ctx, pdf_document *doc, pdf_obj *ref);
+pdf_cmap *pdf_load_embedded_cmap(hd_context *ctx, pdf_obj *ref);
 
 #endif //HDCONTENTS_PDF_CMAP_H

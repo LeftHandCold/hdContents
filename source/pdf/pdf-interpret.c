@@ -8,7 +8,7 @@
 #define MAX_SYNTAX_ERRORS 100
 
 void *
-pdf_new_processor(hd_context *ctx, int size)
+pdf_new_processor(hd_context *ctx, size_t size)
 {
 	return Memento_label(hd_calloc(ctx, 1, size), "pdf_processor");
 }
@@ -37,13 +37,14 @@ pdf_drop_processor(hd_context *ctx, pdf_processor *proc)
 }
 
 static pdf_font_desc *
-load_font_or_hail_mary(hd_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *font, int depth)
+load_font_or_hail_mary(hd_context *ctx, pdf_document *doc, pdf_obj *font)
 {
     pdf_font_desc *desc;
+	desc = NULL;
 
     hd_try(ctx)
     {
-        desc = pdf_load_font(ctx, doc, rdb, font, depth);
+        desc = pdf_load_font(ctx, doc, font);
     }
     hd_catch(ctx)
     {
@@ -103,7 +104,7 @@ pdf_process_keyword(hd_context *ctx, pdf_processor *proc, pdf_csi *csi, hd_strea
                 fontobj = pdf_dict_gets(ctx, fontres, csi->name);
                 if (!fontobj)
                     hd_throw(ctx, HD_ERROR_SYNTAX, "cannot find Font resource '%s'", csi->name);
-                font = load_font_or_hail_mary(ctx, csi->doc, csi->rdb, fontobj, 0);
+                font = load_font_or_hail_mary(ctx, csi->doc, fontobj);
                 hd_try(ctx)
                     proc->op_Tf(ctx, proc, csi->name, font, s[0]);
                 hd_catch(ctx)

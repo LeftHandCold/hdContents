@@ -69,14 +69,14 @@ pdf_remap_cmap(hd_context *ctx, pdf_cmap *gid_from_cpt, pdf_cmap *ucs_from_cpt)
 }
 
 void
-pdf_load_to_unicode(hd_context *ctx, pdf_document *doc, pdf_font_desc *font,
+pdf_load_to_unicode(hd_context *ctx, pdf_font_desc *font,
                     const char **strings, char *collection, pdf_obj *cmapstm)
 {
     unsigned int cpt;
 
     if (pdf_is_stream(ctx, cmapstm))
     {
-        pdf_cmap *ucs_from_cpt = pdf_load_embedded_cmap(ctx, doc, cmapstm);
+        pdf_cmap *ucs_from_cpt = pdf_load_embedded_cmap(ctx, cmapstm);
         font->to_unicode = pdf_remap_cmap(ctx, font->encoding, ucs_from_cpt);
         pdf_drop_cmap(ctx, ucs_from_cpt);
         font->size += pdf_cmap_size(ctx, font->to_unicode);
@@ -99,7 +99,7 @@ pdf_load_to_unicode(hd_context *ctx, pdf_document *doc, pdf_font_desc *font,
         for (cpt = 0; cpt < 256; cpt++)
         {
             if (strings[cpt])
-                font->cid_to_ucs[cpt] = pdf_lookup_agl(strings[cpt]);
+                font->cid_to_ucs[cpt] = (unsigned short)pdf_lookup_agl(strings[cpt]);
             else
                 font->cid_to_ucs[cpt] = HD_REPLACEMENT_CHARACTER;
         }

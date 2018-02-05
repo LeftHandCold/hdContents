@@ -21,7 +21,7 @@ pdf_cmap_size(hd_context *ctx, pdf_cmap *cmap)
  * Load CMap stream in PDF file
  */
 pdf_cmap *
-pdf_load_embedded_cmap(hd_context *ctx, pdf_document *doc, pdf_obj *stmobj)
+pdf_load_embedded_cmap(hd_context *ctx, pdf_obj *stmobj)
 {
     hd_stream *file = NULL;
     pdf_cmap *cmap = NULL;
@@ -60,7 +60,7 @@ pdf_load_embedded_cmap(hd_context *ctx, pdf_document *doc, pdf_obj *stmobj)
  * Create an Identity-* CMap (for both 1 and 2-byte encodings)
  */
 pdf_cmap *
-pdf_new_identity_cmap(hd_context *ctx, int wmode, int bytes)
+pdf_new_identity_cmap(hd_context *ctx, int wmode, unsigned int bytes)
 {
     pdf_cmap *cmap = pdf_new_cmap(ctx);
     hd_try(ctx)

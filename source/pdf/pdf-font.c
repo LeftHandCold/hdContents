@@ -111,7 +111,7 @@ load_cid_font(hd_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
         }
         else if (pdf_is_indirect(ctx, encoding))
         {
-			cmap = pdf_load_embedded_cmap(ctx, doc, encoding);
+			cmap = pdf_load_embedded_cmap(ctx, encoding);
         }
         else
         {
@@ -127,7 +127,7 @@ load_cid_font(hd_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 
         fontdesc->wmode = pdf_cmap_wmode(ctx, fontdesc->encoding);
 
-        pdf_load_to_unicode(ctx, doc, fontdesc, NULL, collection, to_unicode);
+        pdf_load_to_unicode(ctx, fontdesc, NULL, collection, to_unicode);
 
     }
     hd_catch(ctx)
@@ -138,20 +138,16 @@ load_cid_font(hd_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 
     return fontdesc;
 }
-enum { UNKNOWN, TYPE1, TRUETYPE };
 
 static pdf_font_desc *
-pdf_load_simple_font_by_name(hd_context *ctx, pdf_document *doc, pdf_obj *dict, const char *basefont)
+pdf_load_simple_font_by_name(hd_context *ctx, pdf_obj *dict)
 {
     pdf_obj *descriptor;
     pdf_obj *encoding;
-    pdf_obj *widths;
     unsigned short *etable = NULL;
     pdf_font_desc *fontdesc = NULL;
 
-    pdf_obj *subtype;
     int symbolic;
-    int kind;
 
     const char *estrings[256];
     int i, k, n;
@@ -215,7 +211,7 @@ pdf_load_simple_font_by_name(hd_context *ctx, pdf_document *doc, pdf_obj *dict, 
 
         hd_try(ctx)
         {
-            pdf_load_to_unicode(ctx, doc, fontdesc, estrings, NULL, pdf_dict_get(ctx, dict, PDF_NAME_ToUnicode));
+            pdf_load_to_unicode(ctx, fontdesc, estrings, NULL, pdf_dict_get(ctx, dict, PDF_NAME_ToUnicode));
         }
         hd_catch(ctx)
         {
@@ -236,8 +232,7 @@ pdf_load_simple_font_by_name(hd_context *ctx, pdf_document *doc, pdf_obj *dict, 
 static pdf_font_desc *
 pdf_load_simple_font(hd_context *ctx, pdf_document *doc, pdf_obj *dict)
 {
-    const char *basefont = pdf_to_name(ctx, pdf_dict_get(ctx, dict, PDF_NAME_BaseFont));
-    return pdf_load_simple_font_by_name(ctx, doc, dict, basefont);
+    return pdf_load_simple_font_by_name(ctx, dict);
 }
 
 static pdf_font_desc *
@@ -267,7 +262,7 @@ pdf_load_type0_font(hd_context *ctx, pdf_document *doc, pdf_obj *dict)
 }
 
 pdf_font_desc *
-pdf_load_font(hd_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *dict, int nested_depth)
+pdf_load_font(hd_context *ctx, pdf_document *doc, pdf_obj *dict)
 {
     pdf_obj *subtype;
     pdf_obj *dfonts;

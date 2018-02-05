@@ -8,7 +8,7 @@
 typedef struct pdf_csi_s pdf_csi;
 typedef struct pdf_processor_s pdf_processor;
 
-void *pdf_new_processor(hd_context *ctx, int size);
+void *pdf_new_processor(hd_context *ctx, size_t size);
 void pdf_close_processor(hd_context *ctx, pdf_processor *proc);
 void pdf_drop_processor(hd_context *ctx, pdf_processor *proc);
 

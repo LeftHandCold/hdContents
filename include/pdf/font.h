@@ -11,11 +11,6 @@
 void pdf_load_encoding(const char **estrings, const char *encoding);
 int pdf_lookup_agl(const char *name);
 
-extern const char * const pdf_mac_roman[256];
-extern const char * const pdf_mac_expert[256];
-extern const char * const pdf_win_ansi[256];
-extern const char * const pdf_standard[256];
-
 typedef struct pdf_font_desc_s pdf_font_desc;
 
 struct pdf_font_desc_s
@@ -41,10 +36,10 @@ struct pdf_font_desc_s
 };
 
 
-void pdf_load_to_unicode(hd_context *ctx, pdf_document *doc, pdf_font_desc *font, const char **strings, char *collection, pdf_obj *cmapstm);
+void pdf_load_to_unicode(hd_context *ctx, pdf_font_desc *font, const char **strings, char *collection, pdf_obj *cmapstm);
 
 pdf_font_desc *pdf_load_type3_font(hd_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *obj);
-pdf_font_desc *pdf_load_font(hd_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *obj, int nested_depth);
+pdf_font_desc *pdf_load_font(hd_context *ctx, pdf_document *doc, pdf_obj *obj);
 
 pdf_font_desc *pdf_new_font_desc(hd_context *ctx);
 void pdf_drop_font(hd_context *ctx, pdf_font_desc *font);
