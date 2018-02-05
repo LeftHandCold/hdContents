@@ -315,11 +315,15 @@ pdf_process_stream(hd_context *ctx, pdf_processor *proc, pdf_csi *csi, hd_stream
                 hd_rethrow(ctx);
             else if (caught == HD_ERROR_SYNTAX)
             {
-                if (++syntax_errors >= MAX_SYNTAX_ERRORS)
+                /*if (++syntax_errors >= MAX_SYNTAX_ERRORS)
                 {
                     hd_warn(ctx, "too many syntax errors; ignoring rest of page");
                     tok = PDF_TOK_EOF;
-                }
+                }*/
+				/*
+                 * Need to improve the resolution speed is thrown directly after an error.
+                 */
+				hd_rethrow(ctx);
             }
             else
             {
