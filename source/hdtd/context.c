@@ -21,7 +21,7 @@ hd_drop_context(hd_context *ctx)
 
     if (ctx->error)
     {
-        assert(ctx->error->top == ctx->error->stack - 1);
+        //assert(ctx->error->top == ctx->error->stack - 1);
         hd_free(ctx, ctx->error);
     }
 

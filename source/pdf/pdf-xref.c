@@ -931,8 +931,11 @@ pdf_obj *
 pdf_load_object(hd_context *ctx, pdf_document *doc, int num)
 {
     pdf_xref_entry *entry = pdf_cache_object(ctx, doc, num);
-    assert(entry->obj != NULL);
-    return pdf_keep_obj(ctx, entry->obj);
+    //assert(entry->obj != NULL);
+	if (entry->obj != NULL)
+    	return pdf_keep_obj(ctx, entry->obj);
+	else
+		return NULL;
 }
 
 static void
@@ -1039,12 +1042,12 @@ pdf_init_document(hd_context *ctx, pdf_document *doc)
                 hd_try(ctx)
                 {
                     dict = pdf_load_object(ctx, doc, i);
+					if (dict == NULL)
+						hd_throw(ctx, HD_ERROR_GENERIC, "ignoring broken object (%d 0 R)", i);
                 }
                 hd_catch(ctx)
                 {
-                    hd_rethrow_if(ctx, HD_ERROR_TRYLATER);
-                    hd_warn(ctx, "ignoring broken object (%d 0 R)", i);
-                    continue;
+                    hd_rethrow(ctx);
                 }
 
                 if (!hasroot)
