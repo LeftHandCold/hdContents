@@ -79,7 +79,7 @@ static int unicode_to_utf8(char *buf, wchar_t *unicode, int buf_size) {
     //Used to store'\0'
     buf_size -= 1;
     int i;
-    for (i = 0; unicode[i] != 0; i++) {
+    for (i = 0; unicode[i] != 0 && i < buf_size; i++) {
         int size = to_utf8(p, unicode[i], buf_size);
         if (size < 0) {
             break;
@@ -115,14 +115,20 @@ int main() {
 
     /* Open the document. */
     hd_try(ctx)
-        doc = hd_open_document(ctx, "/Users/sjw/Documents/debugfile/f0711656.pdf");
+        doc = hd_open_document(ctx, "F:/pdf/file98.pdf");
     hd_catch(ctx) {
         fprintf(stderr, "cannot open document: %s\n", hd_caught_message(ctx));
         hd_drop_context(ctx);
         return EXIT_FAILURE;
     }
-
-    hd_page *page = hd_load_page(ctx, doc, 0);
+    hd_page *page;
+    hd_try(ctx)
+        page = hd_load_page(ctx, doc, 0);
+    hd_catch(ctx) {
+        fprintf(stderr, "cannot load page: %s\n", hd_caught_message(ctx));
+        hd_drop_context(ctx);
+        return EXIT_FAILURE;
+    }
     char buf[512] = {0};
 
     hd_try(ctx)
@@ -133,7 +139,7 @@ int main() {
         unicode_to_utf8(filenameUtf8, buf, 32);
         FILE *fp;
 
-        fp=fopen("/Users/sjw/Documents/debugfile/test","a+");
+        fp=fopen("F:/test.txt","a+");
         fprintf(fp,"%s",filenameUtf8);
         fclose(fp);
     }
@@ -147,4 +153,5 @@ int main() {
     hd_drop_document(ctx, doc);
     hd_drop_context(ctx);
     printf("hd_new_context is end\n");
+    return 0;
 }

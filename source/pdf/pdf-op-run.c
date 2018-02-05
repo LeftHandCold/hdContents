@@ -19,11 +19,16 @@ pdf_show_char(hd_context *ctx, pdf_run_processor *pr, int cid)
 	pdf_font_desc *fontdesc = pr->fontdesc;
 	int ucsbuf[8];
 	int ucslen;
+	int isunicode;
 
 
 	ucslen = 0;
+	isunicode = 0;
 	if (fontdesc->to_unicode)
+	{
 		ucslen = pdf_lookup_cmap_full(fontdesc->to_unicode, cid, ucsbuf);
+		isunicode = (ucslen > 0) ? 1 : 0;
+	}
 	if (ucslen == 0 && (size_t)cid < fontdesc->cid_to_ucs_len)
 	{
 		ucsbuf[0] = fontdesc->cid_to_ucs[cid];
@@ -55,7 +60,7 @@ pdf_show_char(hd_context *ctx, pdf_run_processor *pr, int cid)
 					memcpy(ctx->contents + ctx->flush_size, (wchar_t *)&ucsbuf[0], 2);
 					ctx->flush_size += 2;
 				}
-				else
+				else if (isunicode)
 				{
 					if (*wc >= 0x4e00 && *wc <= 0x9fa5)
 					{
@@ -76,6 +81,8 @@ show_string(hd_context *ctx, pdf_run_processor *pr, unsigned char *buf, int len)
 	unsigned int cpt;
 	int cid;
 
+	if (fontdesc == NULL)
+		return;
 	while (buf < end)
 	{
 
