@@ -7,6 +7,15 @@
 
 #include "pdf/cmap.h"
 
+
+void pdf_load_encoding(const char **estrings, const char *encoding);
+int pdf_lookup_agl(const char *name);
+
+extern const char * const pdf_mac_roman[256];
+extern const char * const pdf_mac_expert[256];
+extern const char * const pdf_win_ansi[256];
+extern const char * const pdf_standard[256];
+
 typedef struct pdf_font_desc_s pdf_font_desc;
 
 struct pdf_font_desc_s

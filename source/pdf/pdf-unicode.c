@@ -92,6 +92,17 @@ pdf_load_to_unicode(hd_context *ctx, pdf_document *doc, pdf_font_desc *font,
     if (strings)
     {
         /* TODO one-to-many mappings */
+        font->cid_to_ucs_len = 256;
+        font->cid_to_ucs = hd_malloc_array(ctx, 256, sizeof *font->cid_to_ucs);
+        font->size += 256 * sizeof *font->cid_to_ucs;
+
+        for (cpt = 0; cpt < 256; cpt++)
+        {
+            if (strings[cpt])
+                font->cid_to_ucs[cpt] = pdf_lookup_agl(strings[cpt]);
+            else
+                font->cid_to_ucs[cpt] = HD_REPLACEMENT_CHARACTER;
+        }
 
     }
 
