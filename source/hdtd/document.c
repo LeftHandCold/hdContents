@@ -62,8 +62,6 @@ hd_open_document(hd_context *ctx, const char *filename)
     int i, score;
     int best_i, best_score;
     hd_document_handler_context *dc;
-    hd_stream *file;
-    hd_document *doc;
 
     if (filename == NULL)
         hd_throw(ctx, HD_ERROR_GENERIC, "no document to open");
