@@ -336,7 +336,7 @@ pdf_read_start_xref(hd_context *ctx, pdf_document *doc)
             doc->startxref = 0;
             while (i < n && buf[i] >= '0' && buf[i] <= '9')
             {
-                if (doc->startxref >= INT64_MAX/10)
+                if (doc->startxref >= INT32_MAX)
                     hd_throw(ctx, HD_ERROR_GENERIC, "startxref too large");
                 doc->startxref = doc->startxref * 10 + (buf[i++] - '0');
             }
