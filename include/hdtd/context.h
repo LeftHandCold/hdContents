@@ -214,6 +214,11 @@ void hd_free(hd_context *ctx, void *p);
 */
 void hd_flush_warnings(hd_context *ctx);
 
+enum {
+	HD_DEFAULT_CONTENT_SIZE  = 256,
+	HD_DEFAULT_EXTRACT_SIZE  = 128,
+};
+
 struct hd_context_s
 {
     void *user;
@@ -225,7 +230,8 @@ struct hd_context_s
 
 	//Extracted contents
 	unsigned int flush_size;
-	unsigned char contents[256];
+	unsigned int buf_pos;
+	unsigned char contents[HD_DEFAULT_CONTENT_SIZE];
 };
 
 enum {

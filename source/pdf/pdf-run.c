@@ -37,7 +37,7 @@ pdf_run_page_contents_with_usage(hd_context *ctx, pdf_document *doc, pdf_page *p
         hd_rethrow(ctx);
 }
 
-void pdf_run_page_contents(hd_context *ctx, pdf_page *page, char* buf)
+void pdf_run_page_contents(hd_context *ctx, pdf_page *page, char* buf, uint32_t *extract_len)
 {
     pdf_document *doc = page->doc;
 
@@ -45,7 +45,10 @@ void pdf_run_page_contents(hd_context *ctx, pdf_page *page, char* buf)
     {
         pdf_run_page_contents_with_usage(ctx, doc, page);
         if (ctx->flush_size > 1)
+        {
+            *extract_len = ctx->flush_size;
             memcpy(buf, ctx->contents, ctx->flush_size);
+        }
     }
     hd_catch(ctx)
     {

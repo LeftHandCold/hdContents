@@ -159,7 +159,7 @@ pdf_process_stream(hd_context *ctx, pdf_processor *proc, pdf_csi *csi, hd_stream
     pdf_token tok = PDF_TOK_ERROR;
     //whether to enter []
     int in_text_array = 0;
-    int syntax_errors = 0;
+    //int syntax_errors = 0;
 
     /* make sure we have a clean slate if we come here from flush_text */
     pdf_clear_stack(ctx, csi);
@@ -173,6 +173,8 @@ pdf_process_stream(hd_context *ctx, pdf_processor *proc, pdf_csi *csi, hd_stream
         {
             do
             {
+                if (ctx->buf_pos >= HD_DEFAULT_EXTRACT_SIZE)
+                    return;
                 tok = pdf_lex(ctx, stm, buf);
                 if (in_text_array)
                 {

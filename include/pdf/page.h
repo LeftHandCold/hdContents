@@ -25,7 +25,7 @@ pdf_obj *pdf_page_resources(hd_context *ctx, pdf_page *page);
 	pdf_run_page_contents: Interpret a loaded page and render it on a device.
 	Just the main page contents without the annotations
 */
-void pdf_run_page_contents(hd_context *ctx, pdf_page *page, char* buf);
+void pdf_run_page_contents(hd_context *ctx, pdf_page *page, char* buf, uint32_t *extract_len);
 
 /*
  * Page tree, pages and related objects

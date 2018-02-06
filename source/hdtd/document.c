@@ -139,13 +139,13 @@ hd_new_page_of_size(hd_context *ctx, int size)
 }
 
 void
-hd_run_page_contents(hd_context *ctx, hd_page *page, char* buf)
+hd_run_page_contents(hd_context *ctx, hd_page *page, char* buf, uint32_t *extract_len)
 {
     if (page && page->run_page_contents && page)
     {
         hd_try(ctx)
         {
-            page->run_page_contents(ctx, page, buf);
+            page->run_page_contents(ctx, page, buf, extract_len);
         }
         hd_catch(ctx)
         {

@@ -27,7 +27,7 @@ typedef void (hd_page_drop_page_fn)(hd_context *ctx, hd_page *page);
 	contents of a page. See hd_run_page_contents for more
 	information.
 */
-typedef void (hd_page_run_page_contents_fn)(hd_context *ctx, hd_page *page, char* buffer);
+typedef void (hd_page_run_page_contents_fn)(hd_context *ctx, hd_page *page, char* buffer, uint32_t *extract_len);
 
 /*
 	Structure definition is public so other classes can
@@ -167,6 +167,6 @@ void hd_drop_document(hd_context *ctx, hd_document *doc);
 */
 hd_page *hd_load_page(hd_context *ctx, hd_document *doc, int number);
 
-void hd_run_page_contents(hd_context *ctx, hd_page *page, char* buf);
+void hd_run_page_contents(hd_context *ctx, hd_page *page, char* buf, uint32_t *extract_len);
 
 #endif //HDCONTENTS_HDTD_DOCUMENT_H

@@ -35,9 +35,10 @@ pdf_show_char(hd_context *ctx, pdf_run_processor *pr, int cid)
 		ucslen = 1;
 	}
 
-	if ((ctx->flush_size < 62) && cid > 0 && ucslen > 0)
+	if ((ctx->buf_pos < HD_DEFAULT_EXTRACT_SIZE) && cid > 0 && ucslen > 0)
 	{
 		hd_wchar_t *wc = (hd_wchar_t *)&ucsbuf[0];
+        ctx->buf_pos += 2;
 		switch (*wc)
 		{
 			case '/':

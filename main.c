@@ -106,14 +106,14 @@ int main() {
 
     hd_page *page = hd_load_page(ctx, doc, 0);
     char buf[512] = {0};
-
+    uint32_t extract_len = 0;
     hd_try(ctx)
     {
-        hd_run_page_contents(ctx, page, buf);
+        hd_run_page_contents(ctx, page, buf, &extract_len);
         unsigned char filenameUtf8[128];
         memset(filenameUtf8, 0, 128);
 		unsigned int len;
-		len = (ctx->flush_size > 32) ? 32 : ctx->flush_size;
+		len = (extract_len > 32) ? 32 : extract_len;
 		if (len > 0)
 		{
 			unicode_to_utf8(filenameUtf8, (hd_wchar_t* )buf, len);
