@@ -267,7 +267,7 @@ pdf_repair_xref(hd_context *ctx, pdf_document *doc)
                 hd_throw(ctx, HD_ERROR_GENERIC, "cannot tell in file");
 
             hd_try(ctx)
-            tok = pdf_lex_no_string(ctx, doc->file, buf);
+                tok = pdf_lex_no_string(ctx, doc->file, buf);
             hd_catch(ctx)
             {
                 hd_rethrow_if(ctx, HD_ERROR_TRYLATER);

@@ -1107,10 +1107,8 @@ pdf_open_document(hd_context *ctx, const char *filename)
     }
     hd_catch(ctx)
     {
-        hd_drop_stream(ctx, file);
         hd_drop_document(ctx, &doc->super);
         hd_rethrow(ctx);
-        return NULL;
     }
     return doc;
 }
