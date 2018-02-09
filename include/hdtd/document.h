@@ -169,4 +169,9 @@ hd_page *hd_load_page(hd_context *ctx, hd_document *doc, int number);
 
 void hd_run_page_contents(hd_context *ctx, hd_page *page, char* buf, uint32_t *extract_len);
 
+/*
+	hd_drop_page: Free a loaded page.
+*/
+void hd_drop_page(hd_context *ctx, hd_page *page);
+
 #endif //HDCONTENTS_HDTD_DOCUMENT_H

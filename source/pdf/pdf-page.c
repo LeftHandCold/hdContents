@@ -221,7 +221,7 @@ pdf_load_page(hd_context *ctx, pdf_document *doc, int number)
         hd_rethrow(ctx);
 
     page = pdf_new_page(ctx, doc);
-    page->obj = pdf_keep_obj(ctx, pageobj);
+    page->obj = pageobj;//pdf_keep_obj(ctx, pageobj);
     return page;
 
 }

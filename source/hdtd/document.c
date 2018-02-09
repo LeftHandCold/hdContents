@@ -152,3 +152,15 @@ hd_run_page_contents(hd_context *ctx, hd_page *page, char* buf, uint32_t *extrac
         }
     }
 }
+
+
+void
+hd_drop_page(hd_context *ctx, hd_page *page)
+{
+	if (hd_drop_imp(ctx, page, &page->refs))
+	{
+		if (page->drop_page)
+			page->drop_page(ctx, page);
+		hd_free(ctx, page);
+	}
+}

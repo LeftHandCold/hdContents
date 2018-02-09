@@ -8,6 +8,7 @@ hd_drop_stream(hd_context *ctx, hd_stream *stm)
 {
     if (hd_drop_imp(ctx, stm, &stm->refs))
     {
+		//printf("hd_drop_stream is run\n");
         if (stm->close)
             stm->close(ctx, stm->state);
         hd_free(ctx, stm);
