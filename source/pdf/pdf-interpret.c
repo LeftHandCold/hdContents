@@ -107,6 +107,8 @@ pdf_process_keyword(hd_context *ctx, pdf_processor *proc, pdf_csi *csi, hd_strea
                 font = load_font_or_hail_mary(ctx, csi->doc, fontobj);
                 hd_try(ctx)
                     proc->op_Tf(ctx, proc, csi->name, font, s[0]);
+                hd_always(ctx)
+                    pdf_drop_font(ctx, font);
                 hd_catch(ctx)
                     hd_rethrow(ctx);
             }
