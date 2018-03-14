@@ -35,6 +35,7 @@ pdf_new_font_desc(hd_context *ctx)
     pdf_font_desc *fontdesc;
 
     fontdesc = hd_malloc_struct(ctx, pdf_font_desc);
+    HD_INIT_STORABLE(fontdesc, 1, pdf_drop_font_imp);
     fontdesc->size = sizeof(pdf_font_desc);
 
     fontdesc->flags = 0;
@@ -144,7 +145,6 @@ pdf_load_simple_font_by_name(hd_context *ctx, pdf_obj *dict)
 {
     pdf_obj *descriptor;
     pdf_obj *encoding;
-    unsigned short *etable = NULL;
     pdf_font_desc *fontdesc = NULL;
 
     int symbolic;
@@ -162,12 +162,10 @@ pdf_load_simple_font_by_name(hd_context *ctx, pdf_obj *dict)
         descriptor = pdf_dict_get(ctx, dict, PDF_NAME_FontDescriptor);
         fontdesc->flags = pdf_to_int(ctx, pdf_dict_get(ctx, descriptor, PDF_NAME_Flags));
 
-        etable = hd_malloc_array(ctx, 256, sizeof(unsigned short));
         fontdesc->size += 256 * sizeof(unsigned short);
         for (i = 0; i < 256; i++)
         {
             estrings[i] = NULL;
-            etable[i] = 0;
         }
 
         symbolic = fontdesc->flags & 4;
