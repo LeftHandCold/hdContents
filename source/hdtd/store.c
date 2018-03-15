@@ -277,7 +277,7 @@ hd_store_item(hd_context *ctx, void *key, void *val_, size_t itemsize, const hd_
         hd_try(ctx)
         {
             /* May drop and retake the lock */
-            existing = hd_hash_insert(ctx, store->hash, hash.u.pi.i + hash.u.pi.ptr, item);
+            existing = hd_hash_insert(ctx, store->hash, &hash, item);
         }
         hd_catch(ctx)
         {
@@ -356,10 +356,7 @@ hd_find_item(hd_context *ctx, hd_store_drop_fn *drop, void *key, const hd_store_
     hd_store *store = ctx->store;
     hd_store_hash hash = { NULL };
 
-    hd_store_hash check_hash = { NULL };
-
     int use_hash = 0;
-    int use_check_hash = 0;
 
     if (!store)
         return NULL;
@@ -376,7 +373,7 @@ hd_find_item(hd_context *ctx, hd_store_drop_fn *drop, void *key, const hd_store_
     if (use_hash)
     {
         /* We can find objects keyed on indirected objects quickly */
-        item = hd_hash_find(ctx, store->hash, hash.u.pi.i + hash.u.pi.ptr);
+        item = hd_hash_find(ctx, store->hash, &hash);
     }
     else
     {
@@ -389,14 +386,6 @@ hd_find_item(hd_context *ctx, hd_store_drop_fn *drop, void *key, const hd_store_
     }
     if (item)
     {
-        //Need to check the key is the same
-        use_check_hash = type->make_hash_key(ctx, &check_hash, item->key);
-        if (!use_check_hash)
-            return NULL;
-
-        if(hash.u.pi.i + hash.u.pi.ptr != check_hash.u.pi.i + check_hash.u.pi.ptr)
-            return NULL;
-
         /* LRU the block. This also serves to ensure that any item
          * picked up from the hash before it has made it into the
          * linked list does not get whipped out again due to the
